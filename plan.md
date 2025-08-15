@@ -514,7 +514,18 @@ Class Demo.PETS.Scheduling.Transactions Extends %Persistent
 - ✅ **PRIORIDAD**: Comenzar con supply-driven por simplicidad y validación
 - ✅ **ARQUITECTURA**: Separación clara entre ambos enfoques
 - ✅ **PLAN APROBADO**: Listo para comenzar desarrollo
-- 🎯 **EN PROGRESO**: Iniciando Sprint 1.1 - Configuración Base
+- ✅ **SPRINT 1.1 PROGRESO**: 4/5 tareas completadas (80%)
+
+**COMPLETADAS:**
+- ✅ **T1.1.1**: Demo.PETS.Settings - Configuraciones globales
+- ✅ **T1.1.2**: ConfigService - Servicio de configuraciones
+- ✅ **T1.1.3**: Horarios operativos parametrizados (07:00-23:00)
+- ✅ **T1.1.4**: Availability - Modelo de disponibilidad con 15 métodos
+
+**PENDIENTE:**
+- ⏳ **T1.1.5**: SchedulingService - Lógica de negocio de scheduling
+
+- 🎯 **SIGUIENTE**: Completar T1.1.5 para finalizar Sprint 1.1
 
 ---
 
