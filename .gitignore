@@ -1,0 +1,61 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# IRIS specific
+*.log
+*.lck
+IRIS.WIJ
+IRIS.DAT
+iris.cpf
+iris.key
+
+# Docker
+.env
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Build artifacts
+build/
+dist/
+*.obj
+
+# Logs
+logs/
+*.log
+
+# Coverage reports
+coverage/
+
+# Node modules (if using any frontend tools)
+node_modules/
+package-lock.json
+
+# Python (if using any Python tools)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+.env
+
+# Documentation build
+docs/_build/

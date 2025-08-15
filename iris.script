@@ -1,8 +1,40 @@
-;do $System.OBJ.LoadDir("/opt/irisapp/src","ck",,1)
-
 zn "%SYS"
 Do ##class(Security.Users).UnExpireUserPasswords("*")
 
 zn "USER"
 zpm "load /opt/irisapp/ -v":1:1
+
+; Configurar la aplicación web
+set webApp = "/csp/pets"
+set webAppDir = "/opt/irisapp/web"
+set properties("DispatchClass") = "Demo.REST"
+set properties("NameSpace") = "USER"
+set properties("Enabled") = 1
+set properties("AutheEnabled") = 32
+set properties("ServeFiles") = 1
+set properties("Recurse") = 1
+set properties("MatchRoles") = ":%All"
+set tSC = ##class(Security.Applications).Create(webApp, .properties)
+
+; También crear aplicación demo2 para compatibilidad
+set webApp2 = "/csp/demo2"
+set properties2("DispatchClass") = "Demo.REST"
+set properties2("NameSpace") = "USER"
+set properties2("Enabled") = 1
+set properties2("AutheEnabled") = 32
+set properties2("ServeFiles") = 1
+set properties2("Recurse") = 1
+set properties2("MatchRoles") = ":%All"
+set tSC2 = ##class(Security.Applications).Create(webApp2, .properties2)
+
+; Compilar todas las clases
+do $System.OBJ.CompilePackage("Demo.PETS", "ck")
+do $System.OBJ.Compile("Demo.REST", "ck")
+
+; Mensaje de confirmación
+write !, "PETS Management System configurado exitosamente!"
+write !, "Aplicaciones web disponibles en:"
+write !, "  - /csp/pets/"
+write !, "  - /csp/demo2/ (compatibilidad)"
+
 halt

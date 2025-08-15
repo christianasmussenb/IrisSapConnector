@@ -1,14 +1,17 @@
-version: '3.6'
+version: '3.8'
 services:
-  iris:
+  pets-iris:
     build: 
       context: .
       dockerfile: Dockerfile
     restart: always
-    command: --check-caps false
     ports: 
-      - 51773:1972
-      - 52773:52773
-      - 3200:3200
+      - "51773:1972"   # Puerto SuperServer
+      - "52773:52773"  # Puerto Web
+      - "53773:53773"  # Puerto adicional
     volumes:
       - ./:/irisdev/app
+    environment:
+      - ISC_PACKAGE_MGRUSER=irisowner
+      - ISC_PACKAGE_IRISGROUP=irisowner
+    container_name: pets-management-system
