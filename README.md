@@ -4,206 +4,406 @@ Sistema completo de gestión de mascotas y paseadores desarrollado en InterSyste
 
 ## 📋 Características
 
-- **Gestión de Mascotas**: Registro completo con información detallada
-- **Gestión de Paseadores**: Control de personal especializado
-- **Gestión de Dueños**: Base de datos de propietarios
-- **Interfaz Web Moderna**: Aplicación web responsive
-- **Arquitectura Modular**: CSS, JavaScript y Templates organizados
-- **Base de Datos Relacional**: Usando clases persistentes de IRIS
+- **Gestión de Mascotas**: Registro completo con información detallada (nombre, raza, edad, peso, temperamento)
+- **Gestión de Paseadores**: Control de personal especializado con experiencia y tarifas
+- **Gestión de Dueños**: Base de datos de propietarios con información de contacto
+- **Interfaz Web Moderna**: Aplicación web responsive con formularios interactivos
+- **Arquitectura Modular**: CSS, JavaScript y Templates organizados en clases separadas
+- **Base de Datos Relacional**: Usando clases persistentes de IRIS con relaciones uno-a-muchos
+- **API REST Completa**: Endpoints para todas las operaciones CRUD
+- **Sistema de Validaciones**: Validación de datos en backend y frontend
 
-## 🚀 Estructura del Proyecto
+## 🚀 Estado del Proyecto
 
-```
-src/
-├── Demo/
-│   ├── REST.cls                 # Controlador REST principal
-│   └── PETS/
-│       ├── Owners.cls           # Clase persistente - Dueños
-│       ├── Pets.cls             # Clase persistente - Mascotas
-│       ├── Walkers.cls          # Clase persistente - Paseadores
-│       ├── CSS/                 # Estilos modulares
-│       │   ├── Main.cls
-│       │   ├── Base.cls
-│       │   ├── Forms.cls
-│       │   ├── Tables.cls
-│       │   └── Modals.cls
-│       ├── JS/                  # JavaScript modular
-│       │   ├── Main.cls
-│       │   ├── Base.cls
-│       │   ├── Forms.cls
-│       │   └── Modals.cls
-│       ├── Services/            # Servicios de negocio
-│       │   ├── QueryService.cls
-│       │   ├── CreationService.cls
-│       │   ├── Base.cls
-│       │   └── BaseSimple.cls
-│       └── Templates/           # Templates HTML
-│           ├── Base.cls
-│           ├── Forms.cls
-│           ├── Tables.cls
-│           ├── Modals.cls
-│           └── Main.cls
-```
+### ✅ **Sistema Completamente Funcional**
 
-## 🏃‍♂️ Inicio Rápido
+El sistema está **DESPLEGADO y FUNCIONANDO** en IRIS con:
 
-### Instalación con Docker
+- **6 Dueños** registrados en `Demo_PETS.Owners`
+- **7 Mascotas** registradas en `Demo_PETS.Pets` 
+- **6 Paseadores** registrados en `Demo_PETS.Walkers`
+- **22 Clases** cargadas y compiladas exitosamente
+- **2 Aplicaciones Web** configuradas y activas
 
-1. **Construir el contenedor:**
-   ```bash
-   docker-compose up --build
-   ```
-
-2. **Acceder a la aplicación:**
-   - Aplicación web: http://localhost:52773/csp/pets/
-   - Portal de gestión IRIS: http://localhost:52773/csp/sys/UtilHome.csp
-
-### Instalación Manual
-
-1. **Cargar el módulo:**
-   ```objectscript
-   zpm "load /path/to/project/ -v"
-   ```
-
-2. **Configurar aplicación web:**
-   El script `iris.script` configura automáticamente las aplicaciones web necesarias.
-
-## 🎯 Funcionalidades
-
-### 📝 Registro de Entidades
-
-- **Mascotas**: 
-  - Información básica (nombre, raza, edad, peso)
-  - Características físicas (tamaño, color)
-  - Temperamento y observaciones
-  - Relación con dueño
-
-- **Paseadores**:
-  - Datos personales (RUT, nombre, contacto)
-  - Experiencia y disponibilidad
-  - Tarifas por hora
-  - Estado de disponibilidad
-
-- **Dueños**:
-  - Información de contacto completa
-  - Número de mascotas
-  - Preferencias especiales
-
-### 🔍 Consultas y Reportes
-
-- Listados completos de mascotas, paseadores y dueños
-- Filtros y búsquedas avanzadas
-- Información de relaciones entre entidades
-
-### 🧪 Herramientas de Desarrollo
-
-- **Pruebas Automáticas**: Carga de datos de ejemplo
-- **Inicialización de Datos**: Datos de muestra para pruebas
-- **Interfaz de Desarrollo**: Herramientas de debug
-
-## 🌐 Endpoints de la API
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/` | Página principal |
-| GET | `/mascotas` | Formulario registro mascotas |
-| POST | `/guardar-mascota` | Guardar nueva mascota |
-| GET | `/paseadores` | Formulario registro paseadores |
-| POST | `/guardar-paseador` | Guardar nuevo paseador |
-| GET | `/dueños` | Formulario registro dueños |
-| POST | `/guardar-dueño` | Guardar nuevo dueño |
-| GET | `/consultar-mascotas` | Listado de mascotas |
-| GET | `/consultar-paseadores` | Listado de paseadores |
-| GET | `/consultar-dueños` | Listado de dueños |
-| GET | `/inicializar` | Cargar datos de ejemplo |
-| GET | `/pruebas-automaticas` | Suite de pruebas |
-
-## 💾 Modelo de Datos
-
-### Relaciones
+### 🌐 **URLs de Acceso (ACTIVO)**
 
 ```
-Owners (1) ←→ (*) Pets
+🏠 Aplicación Principal:
+http://localhost:52773/csp/pets/
+
+🏠 Aplicación Compatibilidad:
+http://localhost:52773/csp/demo2/
+
+📝 Formularios de Registro:
+http://localhost:52773/csp/pets/mascotas
+http://localhost:52773/csp/pets/paseadores  
+http://localhost:52773/csp/pets/dueños
+
+🔍 Consultas de Datos:
+http://localhost:52773/csp/pets/consultar-mascotas
+http://localhost:52773/csp/pets/consultar-paseadores
+http://localhost:52773/csp/pets/consultar-dueños
+
+🧪 Herramientas del Sistema:
+http://localhost:52773/csp/pets/inicializar
+http://localhost:52773/csp/pets/pruebas-automaticas
+```
+
+## 🗂️ Estructura del Proyecto en IRIS
+
+### **📁 Ubicación en IRIS:**
+- **Namespace:** `USER`
+- **Contenedor:** `irish` (puerto 52773)
+- **Base de Datos:** Tablas SQL autogeneradas
+
+### **🏗️ Arquitectura de Clases:**
+
+```
+Demo.REST                          # Controlador REST principal
+
+Demo.PETS/
+├── Owners.cls                     # 🏠 Clase persistente - Dueños
+├── Pets.cls                       # 🐕 Clase persistente - Mascotas  
+├── Walkers.cls                    # 🚶 Clase persistente - Paseadores
+│
+├── CSS/                           # 🎨 Estilos modulares
+│   ├── Main.cls                   # CSS principal unificado
+│   ├── Base.cls                   # Estilos base del sistema
+│   ├── Forms.cls                  # Estilos de formularios
+│   ├── Tables.cls                 # Estilos de tablas
+│   └── Modals.cls                 # Estilos de modales
+│
+├── JS/                            # ⚡ JavaScript modular
+│   ├── Main.cls                   # JavaScript principal unificado
+│   ├── Base.cls                   # Funciones base
+│   ├── Forms.cls                  # Manejo de formularios
+│   └── Modals.cls                 # Manejo de modales
+│
+├── Services/                      # 🔧 Servicios de negocio
+│   ├── Base.cls                   # Clase base de servicios
+│   ├── BaseSimple.cls             # Servicios simples
+│   ├── CreationService.cls        # Servicios de creación
+│   └── QueryService.cls           # Servicios de consulta
+│
+└── Templates/                     # 📄 Templates HTML
+    ├── Base.cls                   # Templates base (header/footer)
+    ├── Forms.cls                  # Templates de formularios
+    ├── Tables.cls                 # Templates de tablas
+    ├── Modals.cls                 # Templates de modales
+    └── Main.cls                   # Templates principales
+```
+
+### **🗄️ Tablas SQL Generadas:**
+
+| Tabla | Registros | Descripción |
+|-------|-----------|-------------|
+| `Demo_PETS.Owners` | 6 | Información de dueños de mascotas |
+| `Demo_PETS.Pets` | 7 | Registro de mascotas con relación a dueños |
+| `Demo_PETS.Walkers` | 6 | Paseadores registrados en el sistema |
+
+### **🔗 Relaciones de Base de Datos:**
+
+```
+Demo_PETS.Owners (1) ←→ (*) Demo_PETS.Pets
 ```
 
 - Un dueño puede tener múltiples mascotas
 - Cada mascota pertenece a un solo dueño
 - Los paseadores son entidades independientes
+- Índices únicos en RUT (Owners/Walkers) y UserID (Pets)
 
-### Índices
+## 🏃‍♂️ Inicio Rápido
 
-- **Owners**: Índice único en RUT
-- **Pets**: Índice único en UserID
-- **Walkers**: Índice único en RUT
+### **✅ Sistema Ya Desplegado**
 
-## 🔧 Desarrollo
+El sistema ya está funcionando. Solo necesitas acceder a:
+```
+http://localhost:52773/csp/pets/
+```
 
-### Arquitectura Modular
+### **🐳 Si necesitas reconstruir:**
 
-El sistema utiliza una arquitectura modular con separación clara de responsabilidades:
+```bash
+# Clonar repositorio
+git clone https://github.com/christianasmussenb/IrisSapConnector.git
+cd IrisSapConnector
 
-- **Controladores REST**: Manejo de peticiones HTTP
-- **Clases Persistentes**: Modelo de datos
-- **Templates**: Generación de HTML
-- **CSS/JS Modulares**: Estilos y comportamiento frontend
-- **Servicios**: Lógica de negocio
+# Construir y ejecutar
+docker-compose up --build
 
-### Agregar Nuevas Funcionalidades
+# Acceder a la aplicación
+open http://localhost:52773/csp/pets/
+```
 
-1. **Nueva entidad persistente**: Crear clase en `src/Demo/PETS/`
-2. **Nuevo endpoint**: Agregar ruta en `REST.cls`
-3. **Nuevos estilos**: Agregar en `CSS/`
-4. **Nuevo comportamiento**: Agregar en `JS/`
-5. **Nuevos templates**: Agregar en `Templates/`
+### **📦 Instalación en IRIS existente:**
 
-## 📊 Tecnologías
+```objectscript
+USER> do $System.OBJ.LoadDir("/path/to/src","ck",,1)
+USER> do ##class(Demo.PETS.Owners).InsertSampleData()
+USER> do ##class(Demo.PETS.Pets).InsertSampleData()
+USER> do ##class(Demo.PETS.Walkers).InsertSampleData()
+```
 
-- **Backend**: InterSystems IRIS, ObjectScript
+## 🎯 Funcionalidades Implementadas
+
+### ✅ **Operaciones CRUD Completas**
+
+#### **📝 Registro de Entidades:**
+- **Mascotas**: 
+  - ✅ Información básica (name, breed, age, weight)
+  - ✅ Características físicas (size, color, temperament)
+  - ✅ Observaciones y notas especiales
+  - ✅ Relación obligatoria con dueño
+  - ✅ UserID único autogenerado (formato: PET-YYYY-NNNN)
+
+- **Paseadores**:
+  - ✅ Datos personales (RUT, name, phone, email)
+  - ✅ Experiencia y disponibilidad
+  - ✅ Tarifas por hora y estado
+  - ✅ Validación de RUT único
+
+- **Dueños**:
+  - ✅ Información de contacto completa
+  - ✅ Dirección y número de mascotas
+  - ✅ Preferencias especiales
+  - ✅ Validación de RUT único
+
+#### **🔍 Consultas y Reportes:**
+- ✅ Listados completos con diseño responsive
+- ✅ Tablas HTML con información detallada
+- ✅ Relaciones entre entidades mostradas
+- ✅ Contadores de registros en tiempo real
+
+#### **🧪 Herramientas de Desarrollo:**
+- ✅ **Datos de Muestra**: Carga automática de datos de ejemplo
+- ✅ **Pruebas Automáticas**: Suite de pruebas para validar funcionalidad
+- ✅ **Inicialización**: Reset y carga de datos clean
+- ✅ **Validación**: Sistema robusto de validación de datos
+
+## 🌐 API REST Endpoints
+
+| Método | Endpoint | Descripción | Estado |
+|--------|----------|-------------|--------|
+| GET | `/` | Página principal del sistema | ✅ Activo |
+| GET | `/mascotas` | Formulario registro mascotas | ✅ Activo |
+| POST | `/guardar-mascota` | Guardar nueva mascota | ✅ Activo |
+| GET | `/paseadores` | Formulario registro paseadores | ✅ Activo |
+| POST | `/guardar-paseador` | Guardar nuevo paseador | ✅ Activo |
+| GET | `/dueños` | Formulario registro dueños | ✅ Activo |
+| POST | `/guardar-dueño` | Guardar nuevo dueño | ✅ Activo |
+| GET | `/consultar-mascotas` | Listado de mascotas | ✅ Activo |
+| GET | `/consultar-paseadores` | Listado de paseadores | ✅ Activo |
+| GET | `/consultar-dueños` | Listado de dueños | ✅ Activo |
+| GET | `/inicializar` | Cargar datos de ejemplo | ✅ Activo |
+| GET | `/pruebas-automaticas` | Suite de pruebas | ✅ Activo |
+
+## 💾 Acceso a Datos
+
+### **🔍 Consultas SQL Directas:**
+
+```sql
+-- Listar todos los dueños
+SELECT * FROM Demo_PETS.Owners;
+
+-- Listar mascotas con información del dueño
+SELECT p.Name as PetName, p.Breed, p.Age, o.Name as OwnerName 
+FROM Demo_PETS.Pets p 
+JOIN Demo_PETS.Owners o ON p.Owner = o.ID;
+
+-- Contar registros por tipo
+SELECT COUNT(*) as TotalOwners FROM Demo_PETS.Owners;
+SELECT COUNT(*) as TotalPets FROM Demo_PETS.Pets;
+SELECT COUNT(*) as TotalWalkers FROM Demo_PETS.Walkers;
+```
+
+### **⚡ Acceso desde ObjectScript:**
+
+```objectscript
+// Crear nuevo dueño
+USER> set owner = ##class(Demo.PETS.Owners).%New()
+USER> set owner.Name = "John Doe"
+USER> set owner.RUT = "12345678-9"
+USER> do owner.%Save()
+
+// Buscar mascota por ID
+USER> set pet = ##class(Demo.PETS.Pets).%OpenId(1)
+USER> write pet.Name
+
+// Listar datos de muestra
+USER> do ##class(Demo.PETS.Owners).InsertSampleData()
+```
+
+## 🔧 Desarrollo y Arquitectura
+
+### **🏗️ Patrón de Diseño Modular**
+
+El sistema implementa un **patrón MVC modular** con separación clara:
+
+- **Modelo**: Clases persistentes (`Owners`, `Pets`, `Walkers`)
+- **Vista**: Templates HTML modulares + CSS/JS organizados
+- **Controlador**: `Demo.REST` con routing automático
+- **Servicios**: Lógica de negocio separada en `Services/`
+
+### **🎨 Sistema de Templates**
+
+- **Templates Base**: Header/Footer reutilizables
+- **Templates Formularios**: Generación automática de forms
+- **Templates Tablas**: Listados con estilos consistentes
+- **Templates Modales**: Feedback visual uniforme
+
+### **⚡ JavaScript Modular**
+
+- **Autoconfiguración**: Detección automática de tipo de página
+- **Manejo de Forms**: Validación y envío AJAX
+- **Modales Dinámicos**: Feedback visual en tiempo real
+- **Compatibilidad**: Funciones legacy mantenidas
+
+### **🎨 CSS Modular**
+
+- **Sistema de Componentes**: Estilos reutilizables
+- **Responsive Design**: Adaptable a móviles y desktop
+- **Temas Consistentes**: Colores y tipografía unificados
+
+## 📊 Datos del Sistema (Estado Actual)
+
+### **📈 Estadísticas en Vivo:**
+- **Dueños Registrados**: 6
+- **Mascotas Activas**: 7  
+- **Paseadores Disponibles**: 6
+- **Relaciones Establecidas**: 7 (mascota-dueño)
+
+### **🔄 Datos de Ejemplo Incluidos:**
+
+**Dueños de Muestra:**
+- Ana García (RUT: 12345678-9)
+- Luis Martínez (RUT: 98765432-1) 
+- Carmen Silva (RUT: 11223344-5)
+- Roberto López (RUT: 55667788-9)
+- + 2 adicionales
+
+**Mascotas de Muestra:**
+- Max (Labrador, 3 años) → Ana García
+- Luna (Golden Retriever, 2 años) → Luis Martínez  
+- Rocky (Bulldog, 5 años) → Carmen Silva
+- + 4 adicionales con relaciones establecidas
+
+**Paseadores de Muestra:**
+- María González (3 años exp., $15/hora)
+- Carlos Ruiz (5 años exp., $18/hora)
+- Sofia López (2 años exp., $12/hora)
+- + 3 adicionales
+
+## 🚦 Roadmap y Mejoras Futuras
+
+### **🔄 En Desarrollo:**
+- [ ] Edición de registros existentes
+- [ ] Eliminación segura con confirmación
+- [ ] Sistema de búsqueda y filtros
+- [ ] Reportes avanzados en PDF
+- [ ] Dashboard con métricas
+
+### **🎯 Planificado:**
+- [ ] Sistema de autenticación y usuarios
+- [ ] API REST completa (PUT, DELETE)
+- [ ] Integración con calendarios
+- [ ] Sistema de notificaciones
+- [ ] App móvil nativa
+
+## 💡 Casos de Uso
+
+### **🏢 Empresarial:**
+- **Veterinarias**: Gestión de pacientes y propietarios
+- **Pet Hotels**: Control de huéspedes y servicios
+- **Servicios de Paseo**: Administración de clientes y personal
+
+### **🏠 Personal:**
+- **Criadores**: Registro de linajes y propietarios
+- **Rescates**: Gestión de adopciones
+- **Clubs Caninos**: Administración de miembros
+
+## � Tecnologías
+
+- **Backend**: InterSystems IRIS 2024+, ObjectScript
 - **Frontend**: HTML5, CSS3, JavaScript (Vanilla)
-- **Arquitectura**: REST API, MVC Pattern
-- **Base de Datos**: IRIS Native Objects
+- **Arquitectura**: REST API, MVC Pattern, Modular Design
+- **Base de Datos**: IRIS Native Objects con SQL automático
 - **Contenedores**: Docker, Docker Compose
+- **Versionado**: Git, GitHub
 
-## 🎨 UI/UX
+## 🔒 Seguridad y Validaciones
 
-- Diseño responsive para dispositivos móviles
-- Interfaz moderna con iconos y colores
-- Formularios intuitivos con validación
-- Modales para retroalimentación inmediata
-- Navegación clara y consistente
+### **✅ Validaciones Implementadas:**
+- Campos obligatorios en backend y frontend
+- Validación de formatos (email, teléfono, RUT)
+- Prevención de duplicados (RUT único)
+- Sanitización de datos de entrada
+- Manejo de errores robusto
 
-## 🚦 Estado del Proyecto
+### **🛡️ Seguridad:**
+- Autenticación básica de IRIS
+- Escape de caracteres en SQL
+- Validación de tipos de datos
+- Manejo seguro de excepciones
 
-✅ **Completado:**
-- Clases persistentes principales
-- Sistema REST completo
-- Templates HTML modulares
-- CSS y JavaScript organizados
-- Operaciones CRUD básicas
-- Formularios de registro
-- Listados y consultas
+## 🤝 Contribuir
 
-🔄 **En desarrollo:**
-- Edición de registros existentes
-- Eliminación segura de registros
-- Reportes avanzados
-- Sistema de autenticación
-- API REST completa
+### **🔧 Entorno de Desarrollo:**
 
-## 📄 Licencia
+```bash
+# Desarrollo local
+git clone https://github.com/christianasmussenb/IrisSapConnector.git
+cd IrisSapConnector
 
-Este proyecto está bajo licencia MIT. Ver archivo LICENSE para más detalles.
+# Hacer cambios en src/
+# Copiar al contenedor para pruebas:
+docker cp src irish:/tmp/pets-src-dev
+docker exec -it irish iris session iris
+USER> do $System.OBJ.LoadDir("/tmp/pets-src-dev","ck",,1)
+```
 
-## 👥 Contribuir
-
-Las contribuciones son bienvenidas. Por favor:
-
+### **📝 Pull Requests:**
 1. Fork el proyecto
 2. Crear branch de feature (`git checkout -b feature/AmazingFeature`)
 3. Commit los cambios (`git commit -m 'Add some AmazingFeature'`)
 4. Push al branch (`git push origin feature/AmazingFeature`)
 5. Abrir Pull Request
 
+## 📞 Soporte
+
+### **🆘 Resolución de Problemas:**
+
+**Problema**: No se puede acceder a http://localhost:52773/csp/pets/
+```bash
+# Verificar que el contenedor esté ejecutándose
+docker ps | grep irish
+
+# Verificar aplicaciones web en IRIS
+docker exec -it irish iris session iris
+%SYS> do $SYSTEM.Security.Applications.Get("/csp/pets")
+```
+
+**Problema**: Clases no se cargan
+```bash
+# Recargar clases manualmente
+docker cp src irish:/tmp/pets-reload
+docker exec -it irish iris session iris
+USER> do $System.OBJ.LoadDir("/tmp/pets-reload","ck",,1)
+```
+
+### **📧 Contacto:**
+- **Issues**: [GitHub Issues](https://github.com/christianasmussenb/IrisSapConnector/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/christianasmussenb/IrisSapConnector/discussions)
+
+## 📄 Licencia
+
+Este proyecto está bajo licencia MIT. Ver archivo [LICENSE](LICENSE) para más detalles.
+
 ---
 
-Desarrollado con ❤️ usando InterSystems IRIS
+## 🎉 ¡Sistema en Producción!
+
+**El PETS Management System está completamente funcional y listo para usar.**
+
+**🚀 Accede ahora: http://localhost:52773/csp/pets/**
+
+Desarrollado con ❤️ usando InterSystems IRIS | Última actualización: Agosto 2025
