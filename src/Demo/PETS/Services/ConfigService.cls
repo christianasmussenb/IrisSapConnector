@@ -317,4 +317,20 @@ ClassMethod LogError(message As %String, details As %String = "") [ Private ]
     Write !
 }
 
+/// Obtiene días operativos de la semana (0=Domingo, 1=Lunes, etc.)
+ClassMethod GetOperatingDays() As %DynamicArray
+{
+    // Por defecto todos los días están permitidos
+    Set days = []
+    Do days.%Push(1)  // Domingo
+    Do days.%Push(1)  // Lunes  
+    Do days.%Push(1)  // Martes
+    Do days.%Push(1)  // Miércoles
+    Do days.%Push(1)  // Jueves
+    Do days.%Push(1)  // Viernes
+    Do days.%Push(1)  // Sábado
+    
+    Return days
+}
+
 }

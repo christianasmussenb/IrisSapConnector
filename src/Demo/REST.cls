@@ -88,6 +88,11 @@ XData UrlMap
   <Route Url="/consultar-mascotas" Method="GET" Call="ConsultarMascotas"/>
   <Route Url="/consultar-paseadores" Method="GET" Call="ConsultarPaseadores"/>
   <Route Url="/consultar-dueños" Method="GET" Call="ConsultarDueños"/>
+  <!-- Rutas Sprint 1.2 - Disponibilidad de Walkers -->
+  <Route Url="/disponibilidad" Method="GET" Call="DisponibilidadForm"/>
+  <Route Url="/disponibilidad" Method="POST" Call="ProcesarDisponibilidad"/>
+  <Route Url="/calendario" Method="GET" Call="CalendarioWalkers"/>
+  <Route Url="/calendario" Method="POST" Call="ProcesarCalendario"/>
 </Routes>
 }
 
@@ -124,6 +129,20 @@ ClassMethod Home() As %Status
   Write "</div>"
   
   Write "</div>"
+  
+  Write "<div style='display: flex; gap: 30px; margin: 30px 0;'>"
+  
+  Write "<div style='flex: 1; background: #fff3e0; padding: 25px; border-radius: 8px; border-left: 5px solid #ff9800;'>"
+  Write "<h3 style='margin-top: 0; color: #ff9800;'>📅 DISPONIBILIDAD</h3>"
+  Write "<p style='margin-bottom: 20px; color: #666;'>Gestión de horarios y disponibilidad de walkers</p>"
+  Write "<ul style='list-style-type: none; padding: 0;'>"
+  Write "<li style='margin: 12px 0;'><a href='/csp/demo2/disponibilidad' style='display: inline-block; padding: 12px 18px; background: #ff9800; color: white; text-decoration: none; border-radius: 6px; width: 200px; text-align: center;'>📝 Gestionar Disponibilidad</a></li>"
+  Write "<li style='margin: 12px 0;'><a href='/csp/demo2/calendario' style='display: inline-block; padding: 12px 18px; background: #4caf50; color: white; text-decoration: none; border-radius: 6px; width: 200px; text-align: center;'>📅 Vista Calendario</a></li>"
+  Write "</ul>"
+  Write "</div>"
+  
+  Write "</div>"
+  
   Write "<div style='margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 4px;'>"
   Write "<h4>🛠️ Herramientas del Sistema:</h4>"
   Write "<p style='margin-bottom: 15px;'><a href='/csp/demo2/pruebas-automaticas' style='background:#27ae60; color:white; padding:12px 20px; text-decoration:none; border-radius:4px; margin-right:10px;'>🧪 Pruebas Automáticas</a> Registrar datos de ejemplo automáticamente</p>"
@@ -301,6 +320,53 @@ ClassMethod ConsultarDueños() As %Status
   
   Write "</div>"
   Write ##class(Demo.PETS.Templates.Base).GenerateFooter()
+  
+  Return $$$OK
+}
+
+/// Sprint 1.2 - Formulario de Disponibilidad de Walkers
+ClassMethod DisponibilidadForm() As %Status
+{
+  Set %response.ContentType = "text/html; charset=utf-8"
+  
+  // Obtener walker ID desde parámetros (en producción vendría de sesión)
+  Set walkerId = $GET(%request.Data("walkerId", 1), 1)
+  
+  // Delegar a la clase AvailabilityForm
+  Do ##class(Demo.REST.AvailabilityForm).OnPage()
+  
+  Return $$$OK
+}
+
+/// Sprint 1.2 - Procesar formulario de disponibilidad
+ClassMethod ProcesarDisponibilidad() As %Status
+{
+  Set %response.ContentType = "text/html; charset=utf-8"
+  
+  // Delegar a la clase AvailabilityForm
+  Do ##class(Demo.REST.AvailabilityForm).OnPage()
+  
+  Return $$$OK
+}
+
+/// Sprint 1.2 - Calendario visual de disponibilidad
+ClassMethod CalendarioWalkers() As %Status
+{
+  Set %response.ContentType = "text/html; charset=utf-8"
+  
+  // Delegar a la clase WalkerCalendar
+  Do ##class(Demo.REST.WalkerCalendar).OnPage()
+  
+  Return $$$OK
+}
+
+/// Sprint 1.2 - Procesar acciones del calendario
+ClassMethod ProcesarCalendario() As %Status
+{
+  Set %response.ContentType = "text/html; charset=utf-8"
+  
+  // Delegar a la clase WalkerCalendar  
+  Do ##class(Demo.REST.WalkerCalendar).OnPage()
   
   Return $$$OK
 }

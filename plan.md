@@ -524,6 +524,7 @@ Class Demo.PETS.Scheduling.Transactions Extends %Persistent
 - ✅ **T1.1.5**: SchedulingService - 12 métodos de lógica de negocio
 
 - 🎯 **SIGUIENTE**: Sprint 1.2 - Walker Availability Registration
+- ⏳ **EN PROGRESO**: T1.2.4 - Calendario visual para walkers (gestión de sus horarios)
 
 ---
 
