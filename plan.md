@@ -498,7 +498,44 @@ Class Demo.PETS.Scheduling.Transactions Extends %Persistent
 - ✅ **ITERACIÓN 2**: Demand-Driven (owners solicitan → sistema busca walkers)
 - ✅ **PRIORIDAD**: Comenzar con supply-driven por simplicidad y validación
 - ✅ **ARQUITECTURA**: Separación clara entre ambos enfoques
-- 🎯 **Siguiente**: Aprobar enfoque iterativo y comenzar Iteración 1
+- ✅ **PLAN APROBADO**: Listo para comenzar desarrollo
+- 🎯 **EN PROGRESO**: Iniciando Sprint 1.1 - Configuración Base
+
+---
+
+## 🚀 **ACTIVIDADES INMEDIATAS - SPRINT 1.1**
+
+### **📋 TAREAS PRIORITARIAS (Próximas 2-3 horas):**
+
+#### **T1.1.1 - Crear AppSettings.cls** ✅
+- **Propósito**: Configuraciones globales parametrizables
+- **Ubicación**: `/src/Demo/PETS/Settings.cls` (renombrado por límites IRIS)
+- **Contenido**: Horarios operativos, límites, configuraciones
+- **Estado**: ✅ COMPLETADO - Clase compilada y configuraciones inicializadas
+
+#### **T1.1.2 - Crear ConfigService.cls** 🔧
+- **Propósito**: Servicio para gestionar configuraciones
+- **Ubicación**: `/src/Demo/PETS/Services/ConfigService.cls`
+- **Contenido**: CRUD de settings, validaciones, defaults
+- **Estado**: ⏳ PENDIENTE
+
+#### **T1.1.3 - Configurar Horarios Operativos** ⏰
+- **Propósito**: Establecer parámetros base del sistema
+- **Parámetros**: OPERATING_START_TIME, OPERATING_END_TIME, TIME_SLOT_DURATION
+- **Valores**: 07:00-23:00, slots de 60min, máx 5 pets/slot
+- **Estado**: ⏳ PENDIENTE
+
+#### **T1.1.4 - Crear Availability.cls** 📅
+- **Propósito**: Modelo de datos para disponibilidad de walkers
+- **Ubicación**: `/src/Demo/PETS/Scheduling/Availability.cls`
+- **Contenido**: Walker, fecha, hora, capacidad, estado
+- **Estado**: ⏳ PENDIENTE
+
+#### **T1.1.5 - Crear SchedulingService.cls** 🗓️
+- **Propósito**: Lógica de negocio para horarios
+- **Ubicación**: `/src/Demo/PETS/Services/SchedulingService.cls`
+- **Contenido**: Validaciones, CRUD de availability, consultas
+- **Estado**: ⏳ PENDIENTE
 
 ---
 
