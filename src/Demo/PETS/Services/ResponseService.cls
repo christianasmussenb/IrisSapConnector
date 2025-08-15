@@ -2,6 +2,27 @@
 Class Demo.PETS.Services.ResponseService Extends Demo.PETS.Services.Base
 {
 
+/// Build success response for pet creation (UserID format)
+ClassMethod BuildPetUserIDSuccessResponse(pet As Demo.PETS.Pets, formData As %DynamicObject, userID As %String) As %DynamicObject
+{
+    Set response = {}
+    Set response.mensaje = "Mascota registrada exitosamente!"
+    Set response.id = pet.%Id()
+    Set response.userid = userID
+    Set response.nombre = formData.nombre
+    Set response.raza = formData.raza
+    Set response.edad = formData.edad
+    Set response.peso = formData.peso
+    Set response."tamaño" = formData.tamaño
+    Set response.color = formData.color
+    Set response.temperamento = formData.temperamento
+    Set response.owner = pet.Owner.Name
+    Set response."owner_id" = formData.ownerID
+    Set response.estado = "OK"
+    
+    Return response
+}
+
 /// Build success response for pet creation
 ClassMethod BuildPetSuccessResponse(pet As Demo.PETS.Pets, formData As %DynamicObject) As %DynamicObject
 {

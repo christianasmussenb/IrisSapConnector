@@ -261,111 +261,11 @@ ClassMethod GuardarMascota() As %Status
 {
   Set %response.ContentType = "application/json; charset=utf-8"
   
-  Try {
-    // Leer datos del formulario
-    Set nombre = $Get(%request.Data("nombre",1), "")
-    Set raza = $Get(%request.Data("raza",1), "")
-    Set edad = +$Get(%request.Data("edad",1), 0)
-    Set peso = +$Get(%request.Data("peso",1), 0)
-    Set color = $Get(%request.Data("color",1), "")
-    Set tamaño = $Get(%request.Data("tamaño",1), "Mediano")
-    Set temperamento = $Get(%request.Data("temperamento",1), "")
-    Set observaciones = $Get(%request.Data("observaciones",1), "")
-    Set ownerID = +$Get(%request.Data("owner_id",1), 1)
-    
-    If (nombre = "") {
-      Write "{""error"":""El nombre es requerido""}"
-      Return $$$OK
-    }
-    
-    // Generar UserID automáticamente
-    Set userid = ..GenerateUniqueUserID()
-    
-    // Verificar que el dueño existe
-    Set owner = ##class(Demo.PETS.Owners).%OpenId(ownerID)
-    If '$IsObject(owner) {
-      Write "{""error"":""El dueño especificado no existe""}"
-      Return $$$OK
-    }
-    
-    // Crear nueva mascota usando clase persistente
-    Set pet = ##class(Demo.PETS.Pets).%New()
-    Set pet.UserID = userid
-    Set pet.Name = nombre
-    Set pet.Breed = raza
-    Set pet.Age = edad
-    Set pet.Weight = peso
-    Set pet.Size = tamaño
-    Set pet.Color = color
-    Set pet.Status = "Active"
-    Set pet.Temperament = temperamento
-    Set pet.Notes = observaciones
-    Set pet.Owner = owner
-    
-    Set sc = pet.%Save()
-    If $$$ISERR(sc) {
-      Write "{""error"":""Error al guardar: "_$System.Status.GetErrorText(sc)_"""}"
-      Return $$$OK
-    }
-    
-    // Construir JSON de respuesta de forma más segura
-    Set json = {}
-    Set json.mensaje = "Mascota registrada exitosamente!"
-    Set json.id = pet.%Id()
-    Set json.userid = userid
-    Set json.nombre = nombre
-    Set json.raza = raza
-    Set json.edad = edad
-    Set json.peso = peso
-    Set json."tamaño" = tamaño
-    Set json.color = color
-    Set json.temperamento = temperamento
-    Set json.owner = owner.Name
-    Set json."owner_id" = ownerID
-    Set json.estado = "OK"
-    
-    Write json.%ToJSON()
-    
-  } Catch ex {
-    Set errorJson = {}
-    Set errorJson.error = "Error al guardar: "_ex.DisplayString()
-    Write errorJson.%ToJSON()
-  }
+  // Delegate to CreationService for business logic (UserID format)
+  Set result = ##class(Demo.PETS.Services.CreationService).CreatePetFromFormUserID()
+  Write result.%ToJSON()
   
   Return $$$OK
-}
-
-/// Genera un UserID único para mascotas
-/// Formato: PET-YYYY-NNNN (ej: PET-2024-0001)
-ClassMethod GenerateUniqueUserID() As %String
-{
-  Set year = $ZDate($H, 3)
-  Set year = $Extract(year, 1, 4)
-  
-  // Buscar el último UserID del año actual
-  Set sql = "SELECT MAX(UserID) FROM Demo_PETS.Pets WHERE UserID LIKE 'PET-"_year_"-%'"
-  Set statement = ##class(%SQL.Statement).%New()
-  Set sc = statement.%Prepare(sql)
-  Set result = statement.%Execute()
-  
-  Set maxUserID = ""
-  If result.%Next() {
-    Set maxUserID = result.%GetData(1)
-  }
-  
-  // Extraer el número secuencial y incrementar
-  Set nextNumber = 1
-  If (maxUserID '= "") && ($Length(maxUserID, "-") = 3) {
-    Set numberPart = $Piece(maxUserID, "-", 3)
-    If $IsValidNum(numberPart) {
-      Set nextNumber = numberPart + 1
-    }
-  }
-  
-  // Formatear con ceros a la izquierda (4 dígitos)
-  Set numberStr = $Translate($Justify(nextNumber, 4), " ", "0")
-  
-  Return "PET-"_year_"-"_numberStr
 }
 
 ClassMethod PaseadoresForm() As %Status

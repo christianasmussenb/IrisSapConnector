@@ -2,6 +2,56 @@
 Class Demo.PETS.Services.CreationService Extends Demo.PETS.Services.Base
 {
 
+/// Create pet from form data with UserID format (legacy support)
+ClassMethod CreatePetFromFormUserID() As %DynamicObject
+{
+    Try {
+        // Extract form data
+        Set formData = ##class(Demo.PETS.Services.FormService).ExtractPetFormDataUserID()
+        
+        // Validate form data
+        Set validation = ##class(Demo.PETS.Services.ValidationService).ValidatePetDataUserID(formData)
+        If ('validation.isValid) {
+            Return ##class(Demo.PETS.Services.ResponseService).BuildValidationErrorResponse(validation.errors)
+        }
+        
+        // Generate unique UserID
+        Set userid = ##class(Demo.PETS.Services.UtilityService).GenerateUniqueUserID()
+        
+        // Verify owner exists
+        Set owner = ##class(Demo.PETS.Owners).%OpenId(formData.ownerID)
+        If '$IsObject(owner) {
+            Set response = {}
+            Set response.error = "El dueño especificado no existe"
+            Return response
+        }
+        
+        // Create the pet
+        Set pet = ##class(Demo.PETS.Pets).%New()
+        Set pet.UserID = userid
+        Set pet.Name = formData.nombre
+        Set pet.Breed = formData.raza
+        Set pet.Age = formData.edad
+        Set pet.Weight = formData.peso
+        Set pet.Size = formData.tamaño
+        Set pet.Color = formData.color
+        Set pet.Status = "Active"
+        Set pet.Temperament = formData.temperamento
+        Set pet.Notes = formData.observaciones
+        Set pet.Owner = owner
+        
+        Set sc = pet.%Save()
+        If $$$ISERR(sc) {
+            Return ##class(Demo.PETS.Services.ResponseService).BuildGenericErrorResponse($System.Status.GetErrorText(sc))
+        }
+        
+        Return ##class(Demo.PETS.Services.ResponseService).BuildPetUserIDSuccessResponse(pet, formData, userid)
+        
+    } Catch ex {
+        Return ##class(Demo.PETS.Services.ResponseService).BuildExceptionErrorResponse(ex)
+    }
+}
+
 /// Create pet from form data with full validation
 ClassMethod CreatePetFromForm() As %DynamicObject
 {
