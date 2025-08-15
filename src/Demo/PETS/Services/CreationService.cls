@@ -1,107 +1,124 @@
-/// Servicio de creación para el sistema PETS
+/// Service for creating entities in the PETS system
 Class Demo.PETS.Services.CreationService Extends Demo.PETS.Services.Base
 {
 
-/// Crear nueva mascota
-ClassMethod CreatePet(nombre As %String, tipo As %String, edad As %String, raza As %String, duenoId As %String) As %DynamicObject
+/// Create new pet
+ClassMethod CreatePet(name As %String, breed As %String, age As %String, weight As %String, ownerId As %String) As %DynamicObject
 {
     Try {
-        // Validaciones
+        // Validations
         Set errors = []
         
-        Set error = ..ValidateRequired(nombre, "Nombre")
-        If error '= "" Do errors.%Push({"field": "nombre", "message": error})
-        
-        Set error = ..ValidateRequired(tipo, "Tipo")
-        If error '= "" Do errors.%Push({"field": "tipo", "message": error})
-        
-        Set error = ..ValidateRequired(edad, "Edad")
-        If error '= "" Do errors.%Push({"field": "edad", "message": error})
-        
-        Set error = ..ValidateRequired(raza, "Raza")
-        If error '= "" Do errors.%Push({"field": "raza", "message": error})
-        
-        Set error = ..ValidateRequired(duenoId, "Dueño")
-        If error '= "" Do errors.%Push({"field": "duenoId", "message": error})
-        
-        // Validar que la edad sea numérica
-        If (edad '= "") && ('$MATCH(edad, "^[0-9]+$")) {
+        Set error = ..ValidateRequired(name, "Name")
+        If error '= "" {
             Set errorObj = {}
-            Set errorObj.field = "edad"
-            Set errorObj.message = "La edad debe ser un número"
+            Set errorObj.field = "name"
+            Set errorObj.message = error
+            Do errors.%Push(errorObj)
+        }
+        
+        Set error = ..ValidateRequired(breed, "Breed")
+        If error '= "" {
+            Set errorObj = {}
+            Set errorObj.field = "breed"
+            Set errorObj.message = error
+            Do errors.%Push(errorObj)
+        }
+        
+        Set error = ..ValidateRequired(age, "Age")
+        If error '= "" {
+            Set errorObj = {}
+            Set errorObj.field = "age"
+            Set errorObj.message = error
+            Do errors.%Push(errorObj)
+        }
+        
+        Set error = ..ValidateRequired(ownerId, "Owner")
+        If error '= "" {
+            Set errorObj = {}
+            Set errorObj.field = "ownerId"
+            Set errorObj.message = error
+            Do errors.%Push(errorObj)
+        }
+        
+        // Validate that age is numeric
+        If (age '= "") && ('$MATCH(age, "^[0-9]+$")) {
+            Set errorObj = {}
+            Set errorObj.field = "age"
+            Set errorObj.message = "Age must be a number"
             Do errors.%Push(errorObj)
         }
         
         If errors.%Size() > 0 {
-            Return ..ValidationErrorResponse("Errores de validación", errors)
+            Return ..ValidationErrorResponse("Validation errors", errors)
         }
         
-        // Verificar que existe el dueño
-        Set owner = ##class(Demo.PETS.Dueño).%OpenId(duenoId)
+        // Verify that owner exists
+        Set owner = ##class(Demo.PETS.Owners).%OpenId(ownerId)
         If '$IsObject(owner) {
             Set errorObj = {}
-            Set errorObj.field = "duenoId"
-            Set errorObj.message = "El dueño seleccionado no existe"
+            Set errorObj.field = "ownerId"
+            Set errorObj.message = "Selected owner does not exist"
             Do errors.%Push(errorObj)
-            Return ..ValidationErrorResponse("Dueño no válido", errors)
+            Return ..ValidationErrorResponse("Invalid owner", errors)
         }
         
-        // Crear la mascota
-        Set mascota = ##class(Demo.PETS.Mascota).%New()
-        Set mascota.Nombre = nombre
-        Set mascota.Tipo = tipo
-        Set mascota.Edad = +edad
-        Set mascota.Raza = raza
-        Set mascota.Dueño = owner
+        // Create the pet
+        Set pet = ##class(Demo.PETS.Pets).%New()
+        Set pet.Name = name
+        Set pet.Breed = breed
+        Set pet.Age = +age
+        If weight '= "" Set pet.Weight = +weight
+        Set pet.Owner = owner
         
-        Set status = mascota.%Save()
+        Set status = pet.%Save()
         If $$$ISERR(status) {
-            Return ..ErrorResponse("Error al guardar la mascota: " _ $SYSTEM.Status.GetErrorText(status))
+            Return ..ErrorResponse("Error saving pet: " _ $SYSTEM.Status.GetErrorText(status))
         }
         
         Set petData = {}
-        Set petData.id = mascota.%Id()
-        Set petData.nombre = mascota.Nombre
-        Set petData.tipo = mascota.Tipo
-        Set petData.edad = mascota.Edad
-        Set petData.raza = mascota.Raza
-        Set petData.duenoId = mascota.Dueño.%Id()
-        Set petData.duenoNombre = mascota.Dueño.Nombre
+        Set petData.id = pet.%Id()
+        Set petData.name = pet.Name
+        Set petData.breed = pet.Breed
+        Set petData.age = pet.Age
+        Set petData.weight = pet.Weight
+        Set petData.ownerId = pet.Owner.%Id()
+        Set petData.ownerName = pet.Owner.Name
         
-        Return ..SuccessResponse("Mascota creada exitosamente", petData)
+        Return ..SuccessResponse("Pet created successfully", petData)
         
     } Catch ex {
         Return ..HandleException(ex)
     }
 }
 
-/// Crear nuevo paseador
-ClassMethod CreateWalker(nombre As %String, telefono As %String, email As %String, experiencia As %String) As %DynamicObject
+/// Create new walker
+ClassMethod CreateWalker(name As %String, phone As %String, email As %String, experience As %String) As %DynamicObject
 {
     Try {
-        // Validaciones
+        // Validations
         Set errors = []
         
-        Set error = ..ValidateRequired(nombre, "Nombre")
+        Set error = ..ValidateRequired(name, "Name")
         If error '= "" {
             Set errorObj = {}
-            Set errorObj.field = "nombre"
+            Set errorObj.field = "name"
             Set errorObj.message = error
             Do errors.%Push(errorObj)
         }
         
-        Set error = ..ValidateRequired(telefono, "Teléfono")
+        Set error = ..ValidateRequired(phone, "Phone")
         If error '= "" {
             Set errorObj = {}
-            Set errorObj.field = "telefono"
+            Set errorObj.field = "phone"
             Set errorObj.message = error
             Do errors.%Push(errorObj)
         }
         
-        Set error = ..ValidatePhone(telefono)
+        Set error = ..ValidatePhone(phone)
         If error '= "" {
             Set errorObj = {}
-            Set errorObj.field = "telefono"
+            Set errorObj.field = "phone"
             Set errorObj.message = error
             Do errors.%Push(errorObj)
         }
@@ -117,62 +134,62 @@ ClassMethod CreateWalker(nombre As %String, telefono As %String, email As %Strin
         }
         
         If errors.%Size() > 0 {
-            Return ..ValidationErrorResponse("Errores de validación", errors)
+            Return ..ValidationErrorResponse("Validation errors", errors)
         }
         
-        // Crear el paseador
-        Set paseador = ##class(Demo.PETS.Paseador).%New()
-        Set paseador.Nombre = nombre
-        Set paseador.Telefono = telefono
-        Set paseador.Email = email
-        Set paseador.Experiencia = experiencia
+        // Create the walker
+        Set walker = ##class(Demo.PETS.Walkers).%New()
+        Set walker.Name = name
+        Set walker.Phone = phone
+        Set walker.Email = email
+        Set walker.Notes = experience
         
-        Set status = paseador.%Save()
+        Set status = walker.%Save()
         If $$$ISERR(status) {
-            Return ..ErrorResponse("Error al guardar el paseador: " _ $SYSTEM.Status.GetErrorText(status))
+            Return ..ErrorResponse("Error saving walker: " _ $SYSTEM.Status.GetErrorText(status))
         }
         
         Set walkerData = {}
-        Set walkerData.id = paseador.%Id()
-        Set walkerData.nombre = paseador.Nombre
-        Set walkerData.telefono = paseador.Telefono
-        Set walkerData.email = paseador.Email
-        Set walkerData.experiencia = paseador.Experiencia
+        Set walkerData.id = walker.%Id()
+        Set walkerData.name = walker.Name
+        Set walkerData.phone = walker.Phone
+        Set walkerData.email = walker.Email
+        Set walkerData.experience = walker.Notes
         
-        Return ..SuccessResponse("Paseador creado exitosamente", walkerData)
+        Return ..SuccessResponse("Walker created successfully", walkerData)
         
     } Catch ex {
         Return ..HandleException(ex)
     }
 }
 
-/// Crear nuevo dueño
-ClassMethod CreateOwner(nombre As %String, telefono As %String, email As %String, direccion As %String) As %DynamicObject
+/// Create new owner
+ClassMethod CreateOwner(name As %String, phone As %String, email As %String, address As %String) As %DynamicObject
 {
     Try {
-        // Validaciones
+        // Validations
         Set errors = []
         
-        Set error = ..ValidateRequired(nombre, "Nombre")
+        Set error = ..ValidateRequired(name, "Name")
         If error '= "" {
             Set errorObj = {}
-            Set errorObj.field = "nombre"
+            Set errorObj.field = "name"
             Set errorObj.message = error
             Do errors.%Push(errorObj)
         }
         
-        Set error = ..ValidateRequired(telefono, "Teléfono")
+        Set error = ..ValidateRequired(phone, "Phone")
         If error '= "" {
             Set errorObj = {}
-            Set errorObj.field = "telefono"
+            Set errorObj.field = "phone"
             Set errorObj.message = error
             Do errors.%Push(errorObj)
         }
         
-        Set error = ..ValidatePhone(telefono)
+        Set error = ..ValidatePhone(phone)
         If error '= "" {
             Set errorObj = {}
-            Set errorObj.field = "telefono"
+            Set errorObj.field = "phone"
             Set errorObj.message = error
             Do errors.%Push(errorObj)
         }
@@ -188,76 +205,76 @@ ClassMethod CreateOwner(nombre As %String, telefono As %String, email As %String
         }
         
         If errors.%Size() > 0 {
-            Return ..ValidationErrorResponse("Errores de validación", errors)
+            Return ..ValidationErrorResponse("Validation errors", errors)
         }
         
-        // Crear el dueño
-        Set dueño = ##class(Demo.PETS.Dueño).%New()
-        Set dueño.Nombre = nombre
-        Set dueño.Telefono = telefono
-        Set dueño.Email = email
-        Set dueño.Direccion = direccion
+        // Create the owner
+        Set owner = ##class(Demo.PETS.Owners).%New()
+        Set owner.Name = name
+        Set owner.Phone = phone
+        Set owner.Email = email
+        Set owner.Address = address
         
-        Set status = dueño.%Save()
+        Set status = owner.%Save()
         If $$$ISERR(status) {
-            Return ..ErrorResponse("Error al guardar el dueño: " _ $SYSTEM.Status.GetErrorText(status))
+            Return ..ErrorResponse("Error saving owner: " _ $SYSTEM.Status.GetErrorText(status))
         }
         
         Set ownerData = {}
-        Set ownerData.id = dueño.%Id()
-        Set ownerData.nombre = dueño.Nombre
-        Set ownerData.telefono = dueño.Telefono
-        Set ownerData.email = dueño.Email
-        Set ownerData.direccion = dueño.Direccion
+        Set ownerData.id = owner.%Id()
+        Set ownerData.name = owner.Name
+        Set ownerData.phone = owner.Phone
+        Set ownerData.email = owner.Email
+        Set ownerData.address = owner.Address
         
-        Return ..SuccessResponse("Dueño creado exitosamente", ownerData)
+        Return ..SuccessResponse("Owner created successfully", ownerData)
         
     } Catch ex {
         Return ..HandleException(ex)
     }
 }
 
-/// Inicializar datos de prueba
+/// Initialize test data
 ClassMethod InitializeTestData() As %DynamicObject
 {
     Try {
-        // Limpiar datos existentes
-        Do ##class(Demo.PETS.Mascota).%DeleteExtent()
-        Do ##class(Demo.PETS.Paseador).%DeleteExtent()
-        Do ##class(Demo.PETS.Dueño).%DeleteExtent()
+        // Clear existing data
+        Do ##class(Demo.PETS.Pets).%DeleteExtent()
+        Do ##class(Demo.PETS.Walkers).%DeleteExtent()
+        Do ##class(Demo.PETS.Owners).%DeleteExtent()
         
         Set totalCreated = 0
         
-        // Crear dueños de prueba
+        // Create test owners
         Set owners = []
-        Set owner1 = ..CreateOwner("Juan Pérez", "555-0101", "juan@email.com", "Calle 123 #456")
+        Set owner1 = ..CreateOwner("John Smith", "555-0101", "john@email.com", "123 Main St")
         Do owners.%Push(owner1.data.id)
         
-        Set owner2 = ..CreateOwner("María García", "555-0102", "maria@email.com", "Avenida 789 #012")
+        Set owner2 = ..CreateOwner("Mary Johnson", "555-0102", "mary@email.com", "456 Oak Ave")
         Do owners.%Push(owner2.data.id)
         
-        Set owner3 = ..CreateOwner("Carlos Ruiz", "555-0103", "carlos@email.com", "Plaza 345 #678")
+        Set owner3 = ..CreateOwner("Robert Brown", "555-0103", "robert@email.com", "789 Pine Rd")
         Do owners.%Push(owner3.data.id)
         
-        Set owner4 = ..CreateOwner("Ana López", "555-0104", "ana@email.com", "Boulevard 901 #234")
+        Set owner4 = ..CreateOwner("Lisa Wilson", "555-0104", "lisa@email.com", "012 Elm St")
         Do owners.%Push(owner4.data.id)
         
         Set totalCreated = totalCreated + 4
         
-        // Crear paseadores de prueba
-        Do ..CreateWalker("Pedro Martínez", "555-0201", "pedro@paseadores.com", "5 años de experiencia")
-        Do ..CreateWalker("Laura Rodríguez", "555-0202", "laura@paseadores.com", "3 años de experiencia")
-        Do ..CreateWalker("Miguel Torres", "555-0203", "miguel@paseadores.com", "7 años de experiencia")
-        Do ..CreateWalker("Sofia Mendez", "555-0204", "sofia@paseadores.com", "2 años de experiencia")
+        // Create test walkers
+        Do ..CreateWalker("Peter Martinez", "555-0201", "peter@walkers.com", "5 years experience")
+        Do ..CreateWalker("Laura Rodriguez", "555-0202", "laura@walkers.com", "3 years experience")
+        Do ..CreateWalker("Michael Torres", "555-0203", "michael@walkers.com", "7 years experience")
+        Do ..CreateWalker("Sofia Mendez", "555-0204", "sofia@walkers.com", "2 years experience")
         
         Set totalCreated = totalCreated + 4
         
-        // Crear mascotas de prueba
-        Do ..CreatePet("Max", "Perro", "3", "Labrador", owners.%Get(0))
-        Do ..CreatePet("Luna", "Gato", "2", "Persa", owners.%Get(1))
-        Do ..CreatePet("Rocky", "Perro", "5", "Bulldog", owners.%Get(2))
-        Do ..CreatePet("Mia", "Gato", "1", "Siamés", owners.%Get(0))
-        Do ..CreatePet("Buddy", "Perro", "4", "Golden Retriever", owners.%Get(3))
+        // Create test pets
+        Do ..CreatePet("Max", "Labrador", "3", "25.5", owners.%Get(0))
+        Do ..CreatePet("Luna", "Persian", "2", "4.2", owners.%Get(1))
+        Do ..CreatePet("Rocky", "Bulldog", "5", "28.0", owners.%Get(2))
+        Do ..CreatePet("Mia", "Siamese", "1", "3.5", owners.%Get(0))
+        Do ..CreatePet("Buddy", "Golden Retriever", "4", "30.2", owners.%Get(3))
         
         Set totalCreated = totalCreated + 5
         
@@ -267,7 +284,7 @@ ClassMethod InitializeTestData() As %DynamicObject
         Set data.walkers = 4
         Set data.pets = 5
         
-        Return ..SuccessResponse("Datos de prueba inicializados exitosamente", data)
+        Return ..SuccessResponse("Test data initialized successfully", data)
         
     } Catch ex {
         Return ..HandleException(ex)

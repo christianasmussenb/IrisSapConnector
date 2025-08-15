@@ -2,15 +2,16 @@
 Class Demo.PETS.Services.Base Extends %RegisteredObject [ Abstract ]
 {
 
-/// Códigos de estado estándar
+/// Codigos de estado estandar
 Parameter SUCCESS = "SUCCESS";
 
 Parameter ERROR = "ERROR";
 
 Parameter NOTFOUND = "NOT_FOUND";
-Parameter VALIDATION_ERROR = "VALIDATION_ERROR";
 
-/// Crear respuesta estándar de servicio
+Parameter VALIDATIONERROR = "VALIDATION_ERROR";
+
+/// Crear respuesta estandar de servicio
 ClassMethod CreateServiceResponse(status As %String = "", message As %String = "", data As %DynamicObject = "", errors As %DynamicArray = "") As %DynamicObject
 {
     Set response = {}
@@ -29,22 +30,22 @@ ClassMethod CreateServiceResponse(status As %String = "", message As %String = "
     Return response
 }
 
-/// Crear respuesta de éxito
-ClassMethod SuccessResponse(message As %String = "Operación exitosa", data As %DynamicObject = "") As %DynamicObject
+/// Crear respuesta de exito
+ClassMethod SuccessResponse(message As %String = "Operacion exitosa", data As %DynamicObject = "") As %DynamicObject
 {
     Return ..CreateServiceResponse(..#SUCCESS, message, data)
 }
 
 /// Crear respuesta de error
-ClassMethod ErrorResponse(message As %String = "Error en la operación", errors As %DynamicArray = "") As %DynamicObject
+ClassMethod ErrorResponse(message As %String = "Error en la operacion", errors As %DynamicArray = "") As %DynamicObject
 {
     Return ..CreateServiceResponse(..#ERROR, message, "", errors)
 }
 
-/// Crear respuesta de validación
-ClassMethod ValidationErrorResponse(message As %String = "Error de validación", errors As %DynamicArray = "") As %DynamicObject
+/// Crear respuesta de validacion
+ClassMethod ValidationErrorResponse(message As %String = "Error de validacion", errors As %DynamicArray = "") As %DynamicObject
 {
-    Return ..CreateServiceResponse(..#VALIDATION_ERROR, message, "", errors)
+    Return ..CreateServiceResponse(..#VALIDATIONERROR, message, "", errors)
 }
 
 /// Crear respuesta de no encontrado
@@ -81,19 +82,19 @@ ClassMethod ValidateEmail(email As %String) As %String
     
     Set pattern = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
     If '$MATCH(email, pattern) {
-        Return "Formato de email inválido"
+        Return "Formato de email invalido"
     }
     Return ""
 }
 
-/// Validar teléfono
+/// Validar telefono
 ClassMethod ValidatePhone(phone As %String) As %String
 {
     If phone = "" Return ""
     
     Set cleanPhone = $TRANSLATE(phone, " ()-+", "")
     If '$MATCH(cleanPhone, "^[0-9]{8,15}$") {
-        Return "Formato de teléfono inválido"
+        Return "Formato de telefono invalido"
     }
     Return ""
 }
