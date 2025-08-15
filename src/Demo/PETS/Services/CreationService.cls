@@ -2,7 +2,141 @@
 Class Demo.PETS.Services.CreationService Extends Demo.PETS.Services.Base
 {
 
-/// Create new pet
+/// Create pet from form data with full validation
+ClassMethod CreatePetFromForm() As %DynamicObject
+{
+    Try {
+        // Extract form data
+        Set formData = ##class(Demo.PETS.Services.FormService).ExtractPetFormData()
+        
+        // Validate form data
+        Set validation = ##class(Demo.PETS.Services.ValidationService).ValidatePetData(formData)
+        If ('validation.isValid) {
+            Return ##class(Demo.PETS.Services.ResponseService).BuildValidationErrorResponse(validation.errors)
+        }
+        
+        // Check for duplicate RUT
+        If ##class(Demo.PETS.Services.ValidationService).CheckRUTExists(formData.rut, "pet") {
+            Return ##class(Demo.PETS.Services.ResponseService).BuildDuplicateRUTErrorResponse("pet")
+        }
+        
+        // Verify owner exists
+        Set owner = ##class(Demo.PETS.Owners).GetOwnerByRUT(formData.rutDueno)
+        If '$IsObject(owner) {
+            Return ##class(Demo.PETS.Services.ResponseService).BuildOwnerNotFoundErrorResponse()
+        }
+        
+        // Create the pet
+        Set pet = ##class(Demo.PETS.Pets).%New()
+        Set pet.RUT = formData.rut
+        Set pet.Name = formData.nombre
+        Set pet.Species = formData.especie
+        Set pet.Breed = formData.raza
+        Set pet.Age = formData.edad
+        Set pet.Weight = formData.peso
+        Set pet.Color = formData.color
+        Set pet.Gender = formData.genero
+        Set pet.Description = formData.descripcion
+        Set pet.Owner = owner
+        Set pet.Status = "Active"
+        
+        Set sc = pet.%Save()
+        If $$$ISERR(sc) {
+            Return ##class(Demo.PETS.Services.ResponseService).BuildGenericErrorResponse($System.Status.GetErrorText(sc))
+        }
+        
+        Return ##class(Demo.PETS.Services.ResponseService).BuildPetSuccessResponse(pet, formData)
+        
+    } Catch ex {
+        Return ##class(Demo.PETS.Services.ResponseService).BuildExceptionErrorResponse(ex)
+    }
+}
+
+/// Create walker from form data with full validation
+ClassMethod CreateWalkerFromForm() As %DynamicObject
+{
+    Try {
+        // Extract form data
+        Set formData = ##class(Demo.PETS.Services.FormService).ExtractWalkerFormData()
+        
+        // Validate form data
+        Set validation = ##class(Demo.PETS.Services.ValidationService).ValidateWalkerData(formData)
+        If ('validation.isValid) {
+            Return ##class(Demo.PETS.Services.ResponseService).BuildValidationErrorResponse(validation.errors)
+        }
+        
+        // Check for duplicate RUT
+        If ##class(Demo.PETS.Services.ValidationService).CheckRUTExists(formData.rut, "walker") {
+            Return ##class(Demo.PETS.Services.ResponseService).BuildDuplicateRUTErrorResponse("walker")
+        }
+        
+        // Create the walker
+        Set walker = ##class(Demo.PETS.Walkers).%New()
+        Set walker.RUT = formData.rut
+        Set walker.Name = formData.nombre
+        Set walker.Phone = formData.telefono
+        Set walker.Email = formData.email
+        Set walker.Age = formData.edad
+        Set walker.Experience = formData.experiencia
+        Set walker.Availability = formData.disponibilidad
+        Set walker.HourlyRate = formData.tarifa
+        Set walker.Notes = formData.referencias
+        Set walker.Status = "Available"
+        
+        Set sc = walker.%Save()
+        If $$$ISERR(sc) {
+            Return ##class(Demo.PETS.Services.ResponseService).BuildGenericErrorResponse($System.Status.GetErrorText(sc))
+        }
+        
+        Return ##class(Demo.PETS.Services.ResponseService).BuildWalkerSuccessResponse(walker, formData)
+        
+    } Catch ex {
+        Return ##class(Demo.PETS.Services.ResponseService).BuildExceptionErrorResponse(ex)
+    }
+}
+
+/// Create owner from form data with full validation
+ClassMethod CreateOwnerFromForm() As %DynamicObject
+{
+    Try {
+        // Extract form data
+        Set formData = ##class(Demo.PETS.Services.FormService).ExtractOwnerFormData()
+        
+        // Validate form data
+        Set validation = ##class(Demo.PETS.Services.ValidationService).ValidateOwnerData(formData)
+        If ('validation.isValid) {
+            Return ##class(Demo.PETS.Services.ResponseService).BuildValidationErrorResponse(validation.errors)
+        }
+        
+        // Check for duplicate RUT
+        If ##class(Demo.PETS.Services.ValidationService).CheckRUTExists(formData.rut, "owner") {
+            Return ##class(Demo.PETS.Services.ResponseService).BuildDuplicateRUTErrorResponse("owner")
+        }
+        
+        // Create the owner
+        Set owner = ##class(Demo.PETS.Owners).%New()
+        Set owner.RUT = formData.rut
+        Set owner.Name = formData.nombre
+        Set owner.Phone = formData.telefono
+        Set owner.Email = formData.email
+        Set owner.Address = formData.direccion
+        Set owner.NumberOfPets = formData.numMascotas
+        Set owner.Preferences = formData.preferencias
+        Set owner.Status = "Active"
+        
+        Set sc = owner.%Save()
+        If $$$ISERR(sc) {
+            Return ##class(Demo.PETS.Services.ResponseService).BuildGenericErrorResponse($System.Status.GetErrorText(sc))
+        }
+        
+        Return ##class(Demo.PETS.Services.ResponseService).BuildOwnerSuccessResponse(owner, formData)
+        
+    } Catch ex {
+        Return ##class(Demo.PETS.Services.ResponseService).BuildExceptionErrorResponse(ex)
+    }
+}
+
+/// Create new pet (legacy method for backward compatibility)
 ClassMethod CreatePet(name As %String, breed As %String, age As %String, weight As %String, ownerId As %String) As %DynamicObject
 {
     Try {

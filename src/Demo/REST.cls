@@ -393,70 +393,9 @@ ClassMethod GuardarPaseador() As %Status
 {
   Set %response.ContentType = "application/json; charset=utf-8"
   
-  Try {
-    Set rut = $Get(%request.Data("rut",1), "")
-    Set nombre = $Get(%request.Data("nombre",1), "")
-    Set telefono = $Get(%request.Data("telefono",1), "")
-    Set email = $Get(%request.Data("email",1), "")
-    Set edad = +$Get(%request.Data("edad",1), 0)
-    Set experiencia = +$Get(%request.Data("experiencia",1), 0)
-    Set disponibilidad = $Get(%request.Data("disponibilidad",1), "")
-    Set tarifa = +$Get(%request.Data("tarifa",1), 0)
-    Set referencias = $Get(%request.Data("referencias",1), "")
-    
-    If (rut = "") || (nombre = "") || (telefono = "") || (edad < 18) {
-      Write "{""error"":""RUT, nombre, teléfono son requeridos y edad mínima 18 años""}"
-      Return $$$OK
-    }
-    
-    // Verificar si ya existe un paseador con este RUT
-    Set existingWalker = ##class(Demo.PETS.Walkers).GetWalkerByRUT(rut)
-    If $IsObject(existingWalker) {
-      Write "{""error"":""Ya existe un paseador registrado con este RUT""}"
-      Return $$$OK
-    }
-    
-    // Crear nuevo paseador usando clase persistente
-    Set walker = ##class(Demo.PETS.Walkers).%New()
-    Set walker.RUT = rut
-    Set walker.Name = nombre
-    Set walker.Phone = telefono
-    Set walker.Email = email
-    Set walker.Age = edad
-    Set walker.Experience = experiencia
-    Set walker.Availability = disponibilidad
-    Set walker.HourlyRate = tarifa
-    Set walker.Notes = referencias
-    Set walker.Status = "Available"
-    
-    Set sc = walker.%Save()
-    If $$$ISERR(sc) {
-      Write "{""error"":""Error al guardar: "_$System.Status.GetErrorText(sc)_"""}"
-      Return $$$OK
-    }
-    
-    // Construir JSON de respuesta de forma más segura
-    Set json = {}
-    Set json.mensaje = "Paseador registrado exitosamente!"
-    Set json.id = walker.%Id()
-    Set json.rut = rut
-    Set json.nombre = nombre
-    Set json.telefono = telefono
-    Set json.email = email
-    Set json.edad = edad
-    Set json.experiencia = experiencia
-    Set json.disponibilidad = disponibilidad
-    Set json.tarifa = tarifa
-    Set json.referencias = referencias
-    Set json.estado = "OK"
-    
-    Write json.%ToJSON()
-    
-  } Catch ex {
-    Set errorJson = {}
-    Set errorJson.error = "Error al guardar: "_ex.DisplayString()
-    Write errorJson.%ToJSON()
-  }
+  // Delegate to CreationService for business logic
+  Set result = ##class(Demo.PETS.Services.CreationService).CreateWalkerFromForm()
+  Write result.%ToJSON()
   
   Return $$$OK
 }
@@ -486,67 +425,9 @@ ClassMethod GuardarDueño() As %Status
 {
   Set %response.ContentType = "application/json; charset=utf-8"
   
-  Try {
-    Set rut = $Get(%request.Data("rut",1), "")
-    Set nombre = $Get(%request.Data("nombre",1), "")
-    Set telefono = $Get(%request.Data("telefono",1), "")
-    Set email = $Get(%request.Data("email",1), "")
-    Set direccion = $Get(%request.Data("direccion",1), "")
-    Set numMascotas = +$Get(%request.Data("num_mascotas",1), 1)
-    Set preferencias = $Get(%request.Data("preferencias",1), "")
-    
-    If (rut = "") || (nombre = "") || (telefono = "") {
-      Write "{""error"":""RUT, nombre y teléfono son requeridos""}"
-      Return $$$OK
-    }
-    
-    // Verificar si ya existe un dueño con este RUT
-    Set existingOwner = ##class(Demo.PETS.Owners).GetOwnerByRUT(rut)
-    If $IsObject(existingOwner) {
-      Write "{""error"":""Ya existe un dueño registrado con este RUT""}"
-      Return $$$OK
-    }
-    
-    // Crear instancia de la clase persistente
-    Set owner = ##class(Demo.PETS.Owners).%New()
-    Set owner.RUT = rut
-    Set owner.Name = nombre
-    Set owner.Phone = telefono
-    Set owner.Email = email
-    Set owner.Address = direccion
-    Set owner.NumberOfPets = numMascotas
-    Set owner.Preferences = preferencias
-    Set owner.Status = "Active"
-    
-    // Guardar en la base de datos
-    Set status = owner.%Save()
-    If $$$ISERR(status) {
-      Write "{""error"":""Error al guardar en base de datos: "_$SYSTEM.Status.GetErrorText(status)_"""}"
-      Return $$$OK
-    }
-    
-    Set id = owner.%Id()
-    
-    // Construir JSON de respuesta de forma más segura
-    Set json = {}
-    Set json.mensaje = "Dueno registrado exitosamente!"
-    Set json.id = owner.%Id()
-    Set json.rut = rut
-    Set json.nombre = nombre
-    Set json.telefono = telefono
-    Set json.email = email
-    Set json.direccion = direccion
-    Set json."num_mascotas" = numMascotas
-    Set json.preferencias = preferencias
-    Set json.estado = "OK"
-    
-    Write json.%ToJSON()
-    
-  } Catch ex {
-    Set errorJson = {}
-    Set errorJson.error = "Error al guardar: "_ex.DisplayString()
-    Write errorJson.%ToJSON()
-  }
+  // Delegate to CreationService for business logic
+  Set result = ##class(Demo.PETS.Services.CreationService).CreateOwnerFromForm()
+  Write result.%ToJSON()
   
   Return $$$OK
 }
