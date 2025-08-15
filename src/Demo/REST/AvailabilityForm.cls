@@ -60,26 +60,28 @@ ClassMethod ProcessFormSubmission(walkerId As %Integer) As %Status
 /// Procesa adición de nueva disponibilidad
 ClassMethod ProcessAddAvailability(walkerId As %Integer) As %Status
 {
+    // Leer datos del request
     Set dateStr = $GET(%request.Data("available_date", 1))
     Set startTime = $GET(%request.Data("start_time", 1))
     Set endTime = $GET(%request.Data("end_time", 1))
     Set maxPets = +$GET(%request.Data("max_pets", 1))
     Set specialRate = +$GET(%request.Data("special_rate", 1))
     Set notes = $GET(%request.Data("notes", 1))
-    
-        // Leer datos del request
-        Set dateStr = $GET(%request.Data("available_date", 1))
-        Set startTime = $GET(%request.Data("start_time", 1))
-        Set endTime = $GET(%request.Data("end_time", 1))
-        Set maxPets = +$GET(%request.Data("max_pets", 1))
-        Set specialRate = +$GET(%request.Data("special_rate", 1))
-        Set notes = $GET(%request.Data("notes", 1))
 
         // Normalizar/convertir fecha: soportar "YYYY-MM-DD" (type=date) y "DD/MM/YYYY"
         Set date = ""
         If dateStr'="" {
-            Set fmt = $Select(dateStr["-":5, dateStr["/":3, 1:5)
-            Set date = $ZDATEH(dateStr, fmt)
+            // parse sin NEW
+            Set y="",m="",d="",us=""
+            If dateStr["-" {
+                Set y=$PIECE(dateStr,"-",1), m=$PIECE(dateStr,"-",2), d=$PIECE(dateStr,"-",3)
+            } ElseIf dateStr["/" {
+                Set d=$PIECE(dateStr,"/",1), m=$PIECE(dateStr,"/",2), y=$PIECE(dateStr,"/",3)
+            }
+            If (y'="")&(m'="")&(d'="") {
+                Set us=m_"/"_d_"/"_y
+                Set date=$ZDATEH(us,1)
+            }
         }
         If date="" {
             Write "<div class='alert alert-danger'>Fecha inválida. Use YYYY-MM-DD o DD/MM/YYYY.</div>"
@@ -102,7 +104,7 @@ ClassMethod ProcessAddAvailability(walkerId As %Integer) As %Status
             Write "<div class='alert alert-danger'>Horas inválidas. Use HH:MM.</div>"
             Quit $$$OK
         }
-        If startTimeSeconds'<endTimeSeconds {
+        If startTimeSeconds<endTimeSeconds {
             // ok
         } Else {
             Write "<div class='alert alert-danger'>La hora de inicio debe ser anterior a la hora de fin.</div>"
