@@ -13,7 +13,7 @@ Property SettingValue As %String(MAXLEN = 500) [ Required ];
 Property SettingType As %String(VALUELIST = ",TIME,INTEGER,STRING,BOOLEAN,DECIMAL") [ Required ];
 
 /// Descripción de la configuración
-Property Description As %Text;
+Property Description As %String(MAXLEN = 2000);
 
 /// Categoría de la configuración para organización
 Property Category As %String(MAXLEN = 50) [ InitialExpression = "GENERAL" ];
