@@ -15,8 +15,23 @@
    - Gestión de horarios flexibles por walker
    - Capacidad máxima: 5 pets por walker/día/hora
 
-2. **🔒 Sistema de Reservas**
-   - **📅 Calendario Visual para Owners**: Vista mensual tipo calendario con horarios disponibles
+2. **🔒 Sistema de Rese#### **T1#### **T1.1.4 - Crear Availability.cls** ✅
+- **Propósito**: Modelo de datos para disponibilidad de walkers
+- **Ubicación**: `/src/Demo/PETS/Availability.cls`
+- **Contenido**: Walker, fecha, hora, capacidad, estado
+- **Estado**: ✅ COMPLETADO - Clase compilada con 15 métodos funcionales
+- **Correcciones**: Formato de fechas y %Numeric syntax corregidos
+- **Datos**: 1 slot de prueba creado (María González, 2025-08-16, 09:00-10:00)- Crear Availability.cls** ✅
+- **Propósito**: Modelo de datos para disponibilidad de walkers
+- **Ubicación**: `/src/Demo/PETS/Availability.cls`
+- **Contenido**: Walker, fecha, hora, capacidad, estado
+- **Estado**: ✅ COMPLETADO - Clase compilada, 15 métodos implementados, datos de prueba creados
+
+#### **T1.1.5 - Crear SchedulingService.cls** 🔧
+- **Propósito**: Lógica de negocio para horarios
+- **Ubicación**: `/src/Demo/PETS/Services/SchedulingService.cls`
+- **Contenido**: Validaciones, CRUD de availability, consultas
+- **Estado**: ⏳ PENDIENTE **📅 Calendario Visual para Owners**: Vista mensual tipo calendario con horarios disponibles
    - **⏰ Configuración de Horarios**: Parámetros app-level (ej: 07:00 - 23:00)
    - **🎯 Selección Flexible**: Owners seleccionan ventanas de tiempo deseadas
    - **🔍 Matching de Walkers**: Búsqueda automática de walkers con disponibilidad
@@ -513,19 +528,19 @@ Class Demo.PETS.Scheduling.Transactions Extends %Persistent
 - **Contenido**: Horarios operativos, límites, configuraciones
 - **Estado**: ✅ COMPLETADO - Clase compilada y configuraciones inicializadas
 
-#### **T1.1.2 - Crear ConfigService.cls** 🔧
+#### **T1.1.2 - Crear ConfigService.cls** ✅
 - **Propósito**: Servicio para gestionar configuraciones
 - **Ubicación**: `/src/Demo/PETS/Services/ConfigService.cls`
 - **Contenido**: CRUD de settings, validaciones, defaults
-- **Estado**: ⏳ PENDIENTE
+- **Estado**: ✅ COMPLETADO - Servicio compilado y funcional
 
-#### **T1.1.3 - Configurar Horarios Operativos** ⏰
+#### **T1.1.3 - Configurar Horarios Operativos** ✅
 - **Propósito**: Establecer parámetros base del sistema
 - **Parámetros**: OPERATING_START_TIME, OPERATING_END_TIME, TIME_SLOT_DURATION
 - **Valores**: 07:00-23:00, slots de 60min, máx 5 pets/slot
-- **Estado**: ⏳ PENDIENTE
+- **Estado**: ✅ COMPLETADO - Configuraciones establecidas y probadas
 
-#### **T1.1.4 - Crear Availability.cls** 📅
+#### **T1.1.4 - Crear Availability.cls** �
 - **Propósito**: Modelo de datos para disponibilidad de walkers
 - **Ubicación**: `/src/Demo/PETS/Scheduling/Availability.cls`
 - **Contenido**: Walker, fecha, hora, capacidad, estado
