@@ -18,24 +18,22 @@ ClassMethod GenerateJSLink() As %String
 /// Método para inicializar datos de prueba
 ClassMethod InicializarDatos() As %Status
 {
-  // Inicializar datos usando las clases persistentes
-  Do ##class(Demo.PETS.Owners).InsertSampleData()
-  Do ##class(Demo.PETS.Pets).InsertSampleData()
-  Do ##class(Demo.PETS.Walkers).InsertSampleData()
-  
   Set %response.ContentType = "text/html; charset=utf-8"
+  
+  // Delegate to InitializationService for business logic
+  Set initResult = ##class(Demo.PETS.Services.InitializationService).InitializeAllSampleData()
   
   // Usar el sistema de templates modular
   Write ##class(Demo.PETS.Templates.Base).GenerateHeader("Datos Inicializados")
   Write "<div class='container'>"
   Write "<h1>✅ Datos Inicializados Exitosamente</h1>"
-  Write "<div class='info'>Se han cargado los datos de prueba en las tablas persistentes:</div>"
-  Write "<ul>"
-  Write "<li><strong>Dueños:</strong> 4 registros</li>"
-  Write "<li><strong>Mascotas:</strong> 5 registros</li>"
-  Write "<li><strong>Paseadores:</strong> 4 registros</li>"
-  Write "</ul>"
-  Write "<div class='info'>Las relaciones de integridad referencial están funcionando correctamente.</div>"
+  
+  If initResult.success {
+    Write ##class(Demo.PETS.Services.InitializationService).GenerateInitializationStatusHTML()
+  } Else {
+    Write "<div class='error'>Error durante la inicialización: " _ initResult.error _ "</div>"
+  }
+  
   Write "<a href='/csp/demo2/' style='background:#3498db; color:white; padding:10px 20px; text-decoration:none; border-radius:4px;'>🏠 Volver al inicio</a>"
   Write "</div>"
   Write ##class(Demo.PETS.Templates.Base).GenerateFooter()
@@ -61,106 +59,9 @@ ClassMethod PruebasAutomaticas() As %Status
   Write "<button id='runTests' onclick='runAllTests()' style='background:#27ae60; color:white; padding:15px 30px; border:none; border-radius:5px; font-size:16px; cursor:pointer; margin:20px 0;'>▶️ Ejecutar Todas las Pruebas</button>"
   Write "<a href='/csp/demo2/' style='background:#95a5a6; color:white; padding:12px 20px; text-decoration:none; border-radius:4px; margin-left:20px;'>🏠 Volver al Inicio</a>"
   
-  // JavaScript para pruebas automáticas (mantener el script existente)
+  // Generate JavaScript using TestingService
   Write "<script>"
-  Write "const testData = {" _ $c(13,10)
-  Write "  owners: [" _ $c(13,10)
-  Write "    {rut: '19876543-2', nombre: 'Laura Martínez', telefono: '555-1111', email: 'laura@test.com', direccion: 'Calle Test 123', mascotas: 1}," _ $c(13,10)
-  Write "    {rut: '20123456-7', nombre: 'Pedro González', telefono: '555-2222', email: 'pedro@test.com', direccion: 'Av. Prueba 456', mascotas: 2}" _ $c(13,10)
-  Write "  ]," _ $c(13,10)
-  Write "  walkers: [" _ $c(13,10)
-  Write "    {rut: '18765432-1', nombre: 'Sofía López', telefono: '555-3333', email: 'sofia@test.com', edad: 26, experiencia: 2, disponibilidad: 'Tiempo completo', tarifa: 16.00}," _ $c(13,10)
-  Write "    {rut: '17654321-9', nombre: 'Diego Morales', telefono: '555-4444', email: 'diego@test.com', edad: 32, experiencia: 4, disponibilidad: 'Mañanas', tarifa: 19.00}" _ $c(13,10)
-  Write "  ]," _ $c(13,10)
-  Write "  pets: [" _ $c(13,10)
-  Write "    {nombre: 'Rocky', raza: 'Pitbull', edad: 4, peso: 30.5, color: 'Café', tamaño: 'Grande', temperamento: 'Protector, Leal', observaciones: 'Muy activo, necesita ejercicio diario'}," _ $c(13,10)
-  Write "    {nombre: 'Milo', raza: 'Beagle', edad: 2, peso: 15.0, color: 'Tricolor', tamaño: 'Mediano', temperamento: 'Juguetón, Curioso', observaciones: 'Le gusta explorar y seguir rastros'}" _ $c(13,10)
-  Write "  ]" _ $c(13,10)
-  Write "};" _ $c(13,10)
-  Write $c(13,10)
-  
-  Write "let testResults = document.getElementById('test-results');" _ $c(13,10)
-  Write "let ownersCreated = [];" _ $c(13,10)
-  Write $c(13,10)
-  
-  Write "function addResult(type, status, data, error = null) {" _ $c(13,10)
-  Write "  const result = document.createElement('div');" _ $c(13,10)
-  Write "  result.style.margin = '10px 0';" _ $c(13,10)
-  Write "  result.style.padding = '10px';" _ $c(13,10)
-  Write "  result.style.borderRadius = '5px';" _ $c(13,10)
-  Write "  if (status === 'success') {" _ $c(13,10)
-  Write "    result.style.background = '#d4edda'; result.style.color = '#155724'; result.style.border = '1px solid #c3e6cb';" _ $c(13,10)
-  Write "    result.innerHTML = `✅ ${type}: ${data.nombre || data.rut || 'Sin nombre'} registrado exitosamente (ID: ${data.id || 'N/A'})`;" _ $c(13,10)
-  Write "  } else {" _ $c(13,10)
-  Write "    result.style.background = '#f8d7da'; result.style.color = '#721c24'; result.style.border = '1px solid #f5c6cb';" _ $c(13,10)
-  Write "    result.innerHTML = `❌ ${type}: Error - ${error}`;" _ $c(13,10)
-  Write "  }" _ $c(13,10)
-  Write "  testResults.appendChild(result);" _ $c(13,10)
-  Write "}" _ $c(13,10)
-  Write $c(13,10)
-  
-  Write "async function testOwners() {" _ $c(13,10)
-  Write "  addResult('INICIO', 'success', {nombre: 'Pruebas de Dueños'});" _ $c(13,10)
-  Write "  for (let owner of testData.owners) {" _ $c(13,10)
-  Write "    try {" _ $c(13,10)
-  Write "      const formData = new FormData();" _ $c(13,10)
-  Write "      Object.keys(owner).forEach(key => formData.append(key, owner[key]));" _ $c(13,10)
-  Write "      const response = await fetch('/csp/demo2/guardar-dueño', {method: 'POST', body: formData});" _ $c(13,10)
-  Write "      const result = await response.json();" _ $c(13,10)
-  Write "      if (result.error) { addResult('DUEÑO', 'error', owner, result.error); }" _ $c(13,10)
-  Write "      else { addResult('DUEÑO', 'success', result); ownersCreated.push(result.id); }" _ $c(13,10)
-  Write "    } catch (e) { addResult('DUEÑO', 'error', owner, e.message); }" _ $c(13,10)
-  Write "    await new Promise(resolve => setTimeout(resolve, 500));" _ $c(13,10)
-  Write "  }" _ $c(13,10)
-  Write "}" _ $c(13,10)
-  Write $c(13,10)
-  
-  Write "async function testWalkers() {" _ $c(13,10)
-  Write "  addResult('INICIO', 'success', {nombre: 'Pruebas de Paseadores'});" _ $c(13,10)
-  Write "  for (let walker of testData.walkers) {" _ $c(13,10)
-  Write "    try {" _ $c(13,10)
-  Write "      const formData = new FormData();" _ $c(13,10)
-  Write "      Object.keys(walker).forEach(key => formData.append(key, walker[key]));" _ $c(13,10)
-  Write "      const response = await fetch('/csp/demo2/guardar-paseador', {method: 'POST', body: formData});" _ $c(13,10)
-  Write "      const result = await response.json();" _ $c(13,10)
-  Write "      if (result.error) { addResult('PASEADOR', 'error', walker, result.error); }" _ $c(13,10)
-  Write "      else { addResult('PASEADOR', 'success', result); }" _ $c(13,10)
-  Write "    } catch (e) { addResult('PASEADOR', 'error', walker, e.message); }" _ $c(13,10)
-  Write "    await new Promise(resolve => setTimeout(resolve, 500));" _ $c(13,10)
-  Write "  }" _ $c(13,10)
-  Write "}" _ $c(13,10)
-  Write $c(13,10)
-  
-  Write "async function testPets() {" _ $c(13,10)
-  Write "  addResult('INICIO', 'success', {nombre: 'Pruebas de Mascotas'});" _ $c(13,10)
-  Write "  for (let i = 0; i < testData.pets.length; i++) {" _ $c(13,10)
-  Write "    try {" _ $c(13,10)
-  Write "      const pet = testData.pets[i];" _ $c(13,10)
-  Write "      const ownerId = ownersCreated[i] || 1;" _ $c(13,10)
-  Write "      const formData = new FormData();" _ $c(13,10)
-  Write "      Object.keys(pet).forEach(key => formData.append(key, pet[key]));" _ $c(13,10)
-  Write "      formData.append('owner_id', ownerId);" _ $c(13,10)
-  Write "      const response = await fetch('/csp/demo2/guardar-mascota', {method: 'POST', body: formData});" _ $c(13,10)
-  Write "      const result = await response.json();" _ $c(13,10)
-  Write "      if (result.error) { addResult('MASCOTA', 'error', pet, result.error); }" _ $c(13,10)
-  Write "      else { addResult('MASCOTA', 'success', result); }" _ $c(13,10)
-  Write "    } catch (e) { addResult('MASCOTA', 'error', testData.pets[i], e.message); }" _ $c(13,10)
-  Write "    await new Promise(resolve => setTimeout(resolve, 500));" _ $c(13,10)
-  Write "  }" _ $c(13,10)
-  Write "}" _ $c(13,10)
-  Write $c(13,10)
-  
-  Write "async function runAllTests() {" _ $c(13,10)
-  Write "  document.getElementById('runTests').disabled = true;" _ $c(13,10)
-  Write "  document.getElementById('runTests').textContent = '⏳ Ejecutando pruebas...';" _ $c(13,10)
-  Write "  testResults.innerHTML = '<h2>📊 Resultados de las Pruebas:</h2>';" _ $c(13,10)
-  Write "  await testOwners();" _ $c(13,10)
-  Write "  await testWalkers();" _ $c(13,10)
-  Write "  await testPets();" _ $c(13,10)
-  Write "  addResult('FINALIZADO', 'success', {nombre: '¡Todas las pruebas completadas!'});" _ $c(13,10)
-  Write "  document.getElementById('runTests').disabled = false;" _ $c(13,10)
-  Write "  document.getElementById('runTests').textContent = '🔄 Ejecutar Pruebas Nuevamente';" _ $c(13,10)
-  Write "}" _ $c(13,10)
+  Write ##class(Demo.PETS.Services.TestingService).GenerateTestingJavaScript()
   Write "</script>"
   
   Write "</div>"
