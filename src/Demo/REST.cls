@@ -93,6 +93,10 @@ XData UrlMap
   <Route Url="/disponibilidad" Method="POST" Call="ProcesarDisponibilidad"/>
   <Route Url="/calendario" Method="GET" Call="CalendarioWalkers"/>
   <Route Url="/calendario" Method="POST" Call="ProcesarCalendario"/>
+  <!-- Rutas Sprint 1.3 - Vista de Owners -->
+  <Route Url="/owner-availability" Method="GET" Call="OwnerAvailabilityView"/>
+  <Route Url="/owner-availability/:*" Method="GET" Call="OwnerAvailabilityDispatch"/>
+  <Route Url="/owner-availability/:*" Method="POST" Call="OwnerAvailabilityDispatch"/>
 </Routes>
 }
 
@@ -138,6 +142,15 @@ ClassMethod Home() As %Status
   Write "<ul style='list-style-type: none; padding: 0;'>"
   Write "<li style='margin: 12px 0;'><a href='/csp/demo2/disponibilidad' style='display: inline-block; padding: 12px 18px; background: #ff9800; color: white; text-decoration: none; border-radius: 6px; width: 200px; text-align: center;'>📝 Gestionar Disponibilidad</a></li>"
   Write "<li style='margin: 12px 0;'><a href='/csp/demo2/calendario' style='display: inline-block; padding: 12px 18px; background: #4caf50; color: white; text-decoration: none; border-radius: 6px; width: 200px; text-align: center;'>📅 Vista Calendario</a></li>"
+  Write "</ul>"
+  Write "</div>"
+  
+  Write "<div style='flex: 1; background: #f3e5f5; padding: 25px; border-radius: 8px; border-left: 5px solid #9c27b0;'>"
+  Write "<h3 style='margin-top: 0; color: #9c27b0;'>🎯 RESERVAS</h3>"
+  Write "<p style='margin-bottom: 20px; color: #666;'>Sistema de reservas para owners (Sprint 1.3)</p>"
+  Write "<ul style='list-style-type: none; padding: 0;'>"
+  Write "<li style='margin: 12px 0;'><a href='/csp/demo2/owner-availability' style='display: inline-block; padding: 12px 18px; background: #9c27b0; color: white; text-decoration: none; border-radius: 6px; width: 200px; text-align: center;'>📅 Ver Disponibilidad</a></li>"
+  Write "<li style='margin: 12px 0;'><a href='/csp/demo2/owner-availability/calendar' style='display: inline-block; padding: 12px 18px; background: #673ab7; color: white; text-decoration: none; border-radius: 6px; width: 200px; text-align: center;'>🗓️ Calendario de Reservas</a></li>"
   Write "</ul>"
   Write "</div>"
   
@@ -367,6 +380,51 @@ ClassMethod ProcesarCalendario() As %Status
   
   // Delegar a la clase WalkerCalendar  
   Do ##class(Demo.REST.WalkerCalendar).OnPage()
+  
+  Return $$$OK
+}
+
+/// Sprint 1.3 - Vista de disponibilidad para owners (página principal)
+ClassMethod OwnerAvailabilityView() As %Status
+{
+  Set %response.ContentType = "text/html; charset=utf-8"
+  
+  // Delegar a la clase OwnerAvailabilityView
+  Do ##class(Demo.REST.OwnerAvailabilityView).ShowAvailabilityCalendar()
+  
+  Return $$$OK
+}
+
+/// Sprint 1.3 - Dispatcher para rutas dinámicas de owner availability
+ClassMethod OwnerAvailabilityDispatch() As %Status
+{
+  // Obtener la URL completa después de /owner-availability/
+  Set path = $GET(%request.Data("*", 1))
+  
+  // Parsear la ruta y delegar a OwnerAvailabilityView
+  If path = "" {
+    Do ##class(Demo.REST.OwnerAvailabilityView).ShowAvailabilityCalendar()
+  } ElseIf path = "calendar" {
+    Do ##class(Demo.REST.OwnerAvailabilityView).ShowAvailabilityCalendar()
+  } ElseIf $PIECE(path, "/", 1) = "calendar" {
+    Set year = $PIECE(path, "/", 2)
+    Set month = $PIECE(path, "/", 3)
+    Do ##class(Demo.REST.OwnerAvailabilityView).ShowMonthlyView(year, month)
+  } ElseIf path = "select-slot" {
+    Do ##class(Demo.REST.OwnerAvailabilityView).SelectSlot()
+  } ElseIf path = "book-slot" {
+    Do ##class(Demo.REST.OwnerAvailabilityView).BookSlot()
+  } ElseIf $PIECE(path, "/", 1) = "api" {
+    Set endpoint = $PIECE(path, "/", 2)
+    If endpoint = "availability" {
+      Set year = $PIECE(path, "/", 3)
+      Set month = $PIECE(path, "/", 4)
+      Do ##class(Demo.REST.OwnerAvailabilityView).GetAvailabilityData(year, month)
+    }
+  } Else {
+    Set %response.Status = "404 Not Found"
+    Write "Ruta no encontrada: " _ path
+  }
   
   Return $$$OK
 }
