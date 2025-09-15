@@ -15,13 +15,24 @@ ClassMethod OnPage() As %Status
     // Headers para contenido HTML
     Set %response.ContentType = "text/html"
     
-    // Obtener walker ID desde parámetros (en producción vendría de sesión)
+    // Obtener walker ID desde parámetros o combo de selección
     Set walkerId = $GET(%request.Data("walkerId", 1), 1)
+    Set selectedWalkerId = $GET(%request.Data("selected_walker", 1), "")
+    
+    // Si se seleccionó un walker diferente desde el combo, usar ese ID
+    If selectedWalkerId '= "" {
+        Set walkerId = +selectedWalkerId
+    }
+    
     Set action = $GET(%request.Data("action", 1), "view")
     
     // Procesar acciones POST
     If %request.Method = "POST" {
-        Do ..ProcessFormSubmission(walkerId)
+        // Si es cambio de walker, no procesar formulario, solo cambiar selección
+        Set formAction = $GET(%request.Data("form_action", 1), "")
+        If formAction '= "change_walker" {
+            Do ..ProcessFormSubmission(walkerId)
+        }
     }
     
     // Renderizar página
@@ -241,8 +252,53 @@ ClassMethod RenderPage(walkerId As %Integer, action As %String) As %Status
     Write "<div class='container mt-4'>"
     Write "<div class='row'>"
     Write "<div class='col-12'>"
+    
+    // Header con título y botón de volver al menú
+    Write "<div class='d-flex justify-content-between align-items-center mb-3'>"
+    Write "<div>"
     Write "<h1><i class='fas fa-calendar-alt'></i> Gestión de Disponibilidad</h1>"
-    Write "<p class='text-muted'>Walker: <strong>" _ walkerName _ "</strong> (ID: " _ walkerId _ ")</p>"
+    Write "</div>"
+    Write "<div>"
+    Write "<a href='/csp/demo2/' class='btn btn-outline-primary btn-lg'>"
+    Write "<i class='fas fa-home'></i> Volver al Menú Principal"
+    Write "</a>"
+    Write "</div>"
+    Write "</div>"
+    
+    // Combo para seleccionar walker
+    Write "<div class='row mb-4'>"
+    Write "<div class='col-md-6'>"
+    Write "<form method='POST' id='walkerForm'>"
+    Write "<input type='hidden' name='form_action' value='change_walker'>"
+    Write "<div class='card'>"
+    Write "<div class='card-body'>"
+    Write "<label for='selected_walker' class='form-label'>"
+    Write "<i class='fas fa-user-tie'></i> <strong>Seleccionar Paseador:</strong>"
+    Write "</label>"
+    Write "<select class='form-select form-select-lg' id='selected_walker' name='selected_walker' "
+    Write "onchange='document.getElementById(""walkerForm"").submit();'>"
+    
+    // Obtener lista de walkers
+    Do ..RenderWalkerOptions(walkerId)
+    
+    Write "</select>"
+    Write "<small class='form-text text-muted'>Seleccione el paseador para gestionar su disponibilidad</small>"
+    Write "</div>"
+    Write "</div>"
+    Write "</form>"
+    Write "</div>"
+    
+    // Información del walker actual
+    Write "<div class='col-md-6'>"
+    Write "<div class='alert alert-info h-100 d-flex align-items-center'>"
+    Write "<div>"
+    Write "<h5 class='mb-1'><i class='fas fa-info-circle'></i> Walker Actual</h5>"
+    Write "<p class='mb-0'><strong>" _ walkerName _ "</strong> (ID: " _ walkerId _ ")</p>"
+    Write "</div>"
+    Write "</div>"
+    Write "</div>"
+    Write "</div>"
+    
     Write "<hr>"
     Write "</div>"
     Write "</div>"
@@ -257,30 +313,69 @@ ClassMethod RenderPage(walkerId As %Integer, action As %String) As %Status
     
     Write "<script src='https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js'></script>"
     Write "<script>"
-    Write "// Validar formulario antes de enviar"
+    
+    Write "// Validar rango de tiempo en tiempo real"
+    Write "function validateTimeRange() {"
+    Write "  const startTime = document.getElementById('start_time').value;"
+    Write "  const endTime = document.getElementById('end_time').value;"
+    Write "  const endInput = document.getElementById('end_time');"
+    Write "  "
+    Write "  if (startTime && endTime) {"
+    Write "    if (startTime >= endTime) {"
+    Write "      endInput.setCustomValidity('La hora de fin debe ser posterior a la de inicio');"
+    Write "      endInput.classList.add('is-invalid');"
+    Write "    } else {"
+    Write "      endInput.setCustomValidity('');"
+    Write "      endInput.classList.remove('is-invalid');"
+    Write "      endInput.classList.add('is-valid');"
+    Write "    }"
+    Write "  }"
+    Write "}"
+    Write ""
+    
+    Write "// Validar formulario antes de enviar - MEJORADO"
     Write "function validateForm() {"
     Write "  const date = document.getElementById('available_date').value;"
     Write "  const startTime = document.getElementById('start_time').value;"
     Write "  const endTime = document.getElementById('end_time').value;"
     Write "  const maxPets = parseInt(document.getElementById('max_pets').value);"
     Write "  "
+    Write "  // Validar campos requeridos"
     Write "  if (!date || !startTime || !endTime || maxPets < 1) {"
-    Write "    alert('Por favor complete todos los campos requeridos.');"
+    Write "    alert('❌ Por favor complete todos los campos requeridos.');"
     Write "    return false;"
     Write "  }"
     Write "  "
+    Write "  // Validar fecha futura"
+    Write "  const selectedDate = new Date(date);"
+    Write "  const tomorrow = new Date();"
+    Write "  tomorrow.setDate(tomorrow.getDate() + 1);"
+    Write "  tomorrow.setHours(0,0,0,0);"
+    Write "  "
+    Write "  if (selectedDate < tomorrow) {"
+    Write "    alert('❌ Debe seleccionar una fecha futura (desde mañana).');"
+    Write "    return false;"
+    Write "  }"
+    Write "  "
+    Write "  // Validar hora inicio < hora fin"
     Write "  if (startTime >= endTime) {"
-    Write "    alert('La hora de inicio debe ser anterior a la hora de fin.');"
+    Write "    alert('❌ La hora de INICIO debe ser ANTERIOR a la hora de FIN.\\n\\nEjemplo correcto:\\n🕘 Inicio: 09:00\\n🕐 Fin: 12:00');"
     Write "    return false;"
     Write "  }"
     Write "  "
-    Write "  if (maxPets > " _ systemLimits.maxPetsPerWalk _ ") {"
-    Write "    alert('Máximo " _ systemLimits.maxPetsPerWalk _ " mascotas por slot.');"
+    Write "  // Validar máximo mascotas"
+    Write "  if (maxPets > " _ systemLimits.%Get("maxPetsPerWalk", 5) _ ") {"
+    Write "    alert('❌ Máximo " _ systemLimits.%Get("maxPetsPerWalk", 5) _ " mascotas por slot.');"
     Write "    return false;"
     Write "  }"
     Write "  "
-    Write "  return true;"
+    Write "  // Confirmación visual antes de guardar"
+    Write "  const dateFormatted = new Date(date).toLocaleDateString('es-ES');"
+    Write "  const confirmation = `✅ Confirmar disponibilidad:\\n\\n📅 Fecha: ${dateFormatted}\\n🕘 De: ${startTime} a ${endTime}\\n🐕 Máx mascotas: ${maxPets}\\n\\n¿Guardar esta disponibilidad?`;"
+    Write "  "
+    Write "  return confirm(confirmation);"
     Write "}"
+    
     Write "</script>"
     
     Write "</body>"
@@ -304,34 +399,47 @@ ClassMethod RenderAddForm(walkerId As %Integer, operatingHours As %DynamicObject
     Write "<input type='hidden' name='form_action' value='add'>"
     Write "<div class='row'>"
     
-    // Fecha
+    // Fecha - CORREGIDO: permitir fechas futuras desde HOY con límites seguros
     Write "<div class='col-md-3'>"
     Write "<label for='available_date' class='form-label'>Fecha <span class='text-danger'>*</span></label>"
-    Set minDate = $ZDATE($HOROLOG, 3)  // Fecha actual en formato YYYY-MM-DD
-    Set maxDate = $ZDATE($HOROLOG + ##class(Demo.PETS.Services.ConfigService).GetSystemLimits().maxBookingDaysAhead, 3)
+    Set minDate = $ZDATE($HOROLOG, 3)  // DESDE HOY (no mañana) para mayor flexibilidad
+    Set systemLimits = ##class(Demo.PETS.Services.ConfigService).GetSystemLimits()
+    Set maxDays = systemLimits.%Get("maxBookingDaysAhead", 30)  // Default 30 días
+    
+    // Asegurarse de que maxDays sea positivo y razonable
+    If maxDays <= 0 Set maxDays = 30
+    If maxDays > 365 Set maxDays = 365  // Máximo 1 año
+    
+    Set maxDate = $ZDATE($HOROLOG + maxDays, 3)
     Write "<input type='date' class='form-control' id='available_date' name='available_date' required "
-    Write "min='" _ minDate _ "' max='" _ maxDate _ "'>"
+    Write "min='" _ minDate _ "' max='" _ maxDate _ "' "
+    Write "title='Seleccione una fecha (desde hoy hasta " _ maxDays _ " días adelante)'>"
+    Write "<small class='form-text text-muted'>Desde: " _ $ZDATE($HOROLOG, 1) _ " hasta: " _ $ZDATE($HOROLOG + maxDays, 1) _ "</small>"
     Write "</div>"
     
-    // Hora inicio
+    // Hora inicio - MEJORADO: con validación y ayuda visual
     Write "<div class='col-md-2'>"
-    Write "<label for='start_time' class='form-label'>Hora Inicio <span class='text-danger'>*</span></label>"
+    Write "<label for='start_time' class='form-label'>🕐 Hora Inicio <span class='text-danger'>*</span></label>"
     Write "<input type='time' class='form-control' id='start_time' name='start_time' required "
-    Write "min='" _ operatingHours.startTime _ "' max='" _ operatingHours.endTime _ "'>"
+    Write "min='" _ operatingHours.%Get("startTime", "06:00") _ "' max='" _ operatingHours.%Get("endTime", "20:00") _ "' "
+    Write "onchange='validateTimeRange()' title='Hora de inicio del turno'>"
+    Write "<small class='form-text text-muted'>Ej: 09:00</small>"
     Write "</div>"
     
-    // Hora fin
+    // Hora fin - MEJORADO: con validación y ayuda visual  
     Write "<div class='col-md-2'>"
-    Write "<label for='end_time' class='form-label'>Hora Fin <span class='text-danger'>*</span></label>"
+    Write "<label for='end_time' class='form-label'>🕐 Hora Fin <span class='text-danger'>*</span></label>"
     Write "<input type='time' class='form-control' id='end_time' name='end_time' required "
-    Write "min='" _ operatingHours.startTime _ "' max='" _ operatingHours.endTime _ "'>"
+    Write "min='" _ operatingHours.%Get("startTime", "06:00") _ "' max='" _ operatingHours.%Get("endTime", "20:00") _ "' "
+    Write "onchange='validateTimeRange()' title='Hora de fin del turno (debe ser posterior al inicio)'>"
+    Write "<small class='form-text text-muted'>Ej: 12:00 (posterior al inicio)</small>"
     Write "</div>"
     
     // Máximo mascotas
     Write "<div class='col-md-2'>"
     Write "<label for='max_pets' class='form-label'>Máx. Mascotas <span class='text-danger'>*</span></label>"
     Write "<input type='number' class='form-control' id='max_pets' name='max_pets' required "
-    Write "min='1' max='" _ systemLimits.maxPetsPerWalk _ "' value='3'>"
+    Write "min='1' max='" _ systemLimits.%Get("maxPetsPerWalk", 5) _ "' value='3'>"
     Write "</div>"
     
     // Tarifa especial
@@ -860,6 +968,53 @@ ClassMethod ProcessCreateTemplate(walkerId As %Integer) As %Status
     }
     
     Write "<div class='alert alert-success'><i class='fas fa-calendar-plus'></i> Plantilla '" _ templateName _ "' aplicada: " _ created _ " slots creados, " _ skipped _ " omitidos</div>"
+    
+    Return $$$OK
+}
+
+/// Renderiza las opciones del combo de selección de walker
+ClassMethod RenderWalkerOptions(currentWalkerId As %Integer) As %Status
+{
+    Try {
+        // Consultar todos los walkers activos
+        Set sql = ##class(%SQL.Statement).%New()
+        Set query = "SELECT ID, Name, Phone, Email FROM Demo_PETS.Walkers ORDER BY Name"
+        Do sql.%Prepare(query)
+        Set result = sql.%Execute()
+        
+        // Opción por defecto
+        Write "<option value=''>-- Seleccione un Paseador --</option>"
+        
+        // Iterar sobre los walkers
+        While result.%Next() {
+            Set walkerId = result.%Get("ID")
+            Set walkerName = result.%Get("Name")
+            Set walkerPhone = result.%Get("Phone")
+            Set walkerEmail = result.%Get("Email")
+            
+            // Marcar como seleccionado si es el walker actual
+            Set selected = ""
+            If walkerId = currentWalkerId {
+                Set selected = " selected"
+            }
+            
+            // Crear información adicional para el tooltip
+            Set walkerInfo = walkerName
+            If walkerPhone '= "" {
+                Set walkerInfo = walkerInfo _ " | " _ walkerPhone
+            }
+            If walkerEmail '= "" {
+                Set walkerInfo = walkerInfo _ " | " _ walkerEmail
+            }
+            
+            Write "<option value='" _ walkerId _ "'" _ selected _ " title='" _ walkerInfo _ "'>"
+            Write walkerName _ " (ID: " _ walkerId _ ")"
+            Write "</option>"
+        }
+        
+    } Catch ex {
+        Write "<option value=''>Error cargando paseadores: " _ ex.DisplayString() _ "</option>"
+    }
     
     Return $$$OK
 }

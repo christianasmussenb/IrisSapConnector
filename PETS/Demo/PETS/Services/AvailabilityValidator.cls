@@ -26,7 +26,8 @@ ClassMethod ValidateSlotComplete(walkerId As %String, date As %Date, startTime A
     }
     
     // Validación 3: Límite máximo de 30 días hacia adelante
-    Set maxBookingDays = ##class(Demo.PETS.Services.ConfigService).GetSystemLimits().maxBookingDaysAhead
+    Set limits = ##class(Demo.PETS.Services.ConfigService).GetSystemLimits()
+    Set maxBookingDays = limits.%Get("maxBookingDaysAhead", 30)  // Default 30 días si no está configurado
     If date > (currentDate + maxBookingDays) {
         Set validation.isValid = 0
         Do validation.errors.%Push("La fecha excede el límite máximo de " _ maxBookingDays _ " días hacia adelante")
@@ -53,17 +54,21 @@ ClassMethod ValidateSlotComplete(walkerId As %String, date As %Date, startTime A
     
     // Validación 7: Horarios dentro del horario operativo
     Set operatingHours = ##class(Demo.PETS.Services.ConfigService).GetOperatingHours()
-    Set operatingStart = $ZTIMEH(operatingHours.startTime)
-    Set operatingEnd = $ZTIMEH(operatingHours.endTime)
+    Set operatingStart = $ZTIMEH(operatingHours.%Get("startTime", "06:00"))
+    Set operatingEnd = $ZTIMEH(operatingHours.%Get("endTime", "20:00"))
     
     If startTime < operatingStart {
         Set validation.isValid = 0
-        Do validation.errors.%Push("Hora de inicio fuera del horario operativo (" _ operatingHours.startTime _ " - " _ operatingHours.endTime _ ")")
+        Set startTimeStr = operatingHours.%Get("startTime", "06:00")
+        Set endTimeStr = operatingHours.%Get("endTime", "20:00")
+        Do validation.errors.%Push("Hora de inicio fuera del horario operativo (" _ startTimeStr _ " - " _ endTimeStr _ ")")
     }
     
     If endTime > operatingEnd {
         Set validation.isValid = 0
-        Do validation.errors.%Push("Hora de fin fuera del horario operativo (" _ operatingHours.startTime _ " - " _ operatingHours.endTime _ ")")
+        Set startTimeStr = operatingHours.%Get("startTime", "06:00")
+        Set endTimeStr = operatingHours.%Get("endTime", "20:00")
+        Do validation.errors.%Push("Hora de fin fuera del horario operativo (" _ startTimeStr _ " - " _ endTimeStr _ ")")
     }
     
     // Validación 8: Capacidad dentro de límites del sistema
@@ -73,9 +78,10 @@ ClassMethod ValidateSlotComplete(walkerId As %String, date As %Date, startTime A
         Do validation.errors.%Push("La capacidad debe ser mayor a 0")
     }
     
-    If capacity > systemLimits.maxPetsPerWalk {
+    Set maxPetsLimit = systemLimits.%Get("maxPetsPerWalk", 5)
+    If capacity > maxPetsLimit {
         Set validation.isValid = 0
-        Do validation.errors.%Push("Capacidad excede límite máximo por paseo: " _ systemLimits.maxPetsPerWalk)
+        Do validation.errors.%Push("Capacidad excede límite máximo por paseo: " _ maxPetsLimit)
     }
     
     // Validación 9: Conflictos de horario con slots existentes
@@ -198,9 +204,10 @@ ClassMethod ValidateSlotUpdate(slotId As %Integer, newMaxPets As %Integer = "", 
         }
         
         Set systemLimits = ##class(Demo.PETS.Services.ConfigService).GetSystemLimits()
-        If newMaxPets > systemLimits.maxPetsPerWalk {
+        Set maxPetsLimit = systemLimits.%Get("maxPetsPerWalk", 5)
+        If newMaxPets > maxPetsLimit {
             Set validation.isValid = 0
-            Do validation.errors.%Push("Capacidad excede límite máximo: " _ systemLimits.maxPetsPerWalk)
+            Do validation.errors.%Push("Capacidad excede límite máximo: " _ maxPetsLimit)
         }
     }
     

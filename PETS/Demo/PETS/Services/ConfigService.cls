@@ -41,6 +41,11 @@ ClassMethod GetOperatingHours() As %DynamicObject
         Set endTime = ..GetSetting("OPERATING_END_TIME")
         Set slotDuration = +..GetSetting("TIME_SLOT_DURATION")
         
+        // Aplicar defaults seguros si las configuraciones están vacías
+        If startTime = "" Set startTime = "06:00"
+        If endTime = "" Set endTime = "20:00"
+        If slotDuration = 0 Set slotDuration = 60  // 60 minutos por slot
+        
         Do result.%Set("startTime", startTime)
         Do result.%Set("endTime", endTime)
         Do result.%Set("slotDuration", slotDuration)
@@ -50,7 +55,14 @@ ClassMethod GetOperatingHours() As %DynamicObject
         Return result
     } Catch ex {
         Do ..LogError("Error obteniendo horarios operativos", ex.DisplayString())
-        Return {}
+        // Retornar valores por defecto seguros en caso de error
+        Set result = {}
+        Do result.%Set("startTime", "06:00")
+        Do result.%Set("endTime", "20:00")
+        Do result.%Set("slotDuration", 60)
+        Do result.%Set("startHour", "6")
+        Do result.%Set("endHour", "20")
+        Return result
     }
 }
 
@@ -59,14 +71,31 @@ ClassMethod GetSystemLimits() As %DynamicObject
 {
     Try {
         Set result = {}
-        Do result.%Set("maxPetsPerSlot", +..GetSetting("MAX_PETS_PER_SLOT"))
-        Do result.%Set("maxBookingDaysAhead", +..GetSetting("MAX_BOOKING_DAYS_AHEAD"))
-        Do result.%Set("minBookingHoursAhead", +..GetSetting("MIN_BOOKING_HOURS_AHEAD"))
+        Set maxPetsPerWalk = +..GetSetting("MAX_PETS_PER_SLOT")
+        If maxPetsPerWalk = 0 Set maxPetsPerWalk = 5  // Default seguro
+        
+        // Configurar límites con defaults seguros
+        Set maxBookingDays = +..GetSetting("MAX_BOOKING_DAYS_AHEAD")
+        If maxBookingDays = 0 Set maxBookingDays = 30  // Default 30 días
+        
+        Set minBookingHours = +..GetSetting("MIN_BOOKING_HOURS_AHEAD")
+        If minBookingHours = 0 Set minBookingHours = 2  // Default 2 horas
+        
+        Do result.%Set("maxPetsPerSlot", maxPetsPerWalk)
+        Do result.%Set("maxPetsPerWalk", maxPetsPerWalk)  // Alias para consistencia
+        Do result.%Set("maxBookingDaysAhead", maxBookingDays)
+        Do result.%Set("minBookingHoursAhead", minBookingHours)
         
         Return result
     } Catch ex {
         Do ..LogError("Error obteniendo límites del sistema", ex.DisplayString())
-        Return {}
+        // Retornar valores por defecto seguros
+        Set result = {}
+        Do result.%Set("maxPetsPerSlot", 5)
+        Do result.%Set("maxPetsPerWalk", 5)
+        Do result.%Set("maxBookingDaysAhead", 30)
+        Do result.%Set("minBookingHoursAhead", 2)
+        Return result
     }
 }
 

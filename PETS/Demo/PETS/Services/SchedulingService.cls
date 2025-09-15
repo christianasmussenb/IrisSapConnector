@@ -148,18 +148,46 @@ ClassMethod SearchAvailability(startDate As %Date, endDate As %Date, timeSlot As
 /// Valida si un horario está dentro de las horas operativas
 ClassMethod ValidateOperatingHours(startTime As %Time, endTime As %Time) As %Boolean
 {
-    set hours = ##class(Demo.PETS.Services.ConfigService).GetOperatingHours()
-    set operatingStart = $PIECE(hours.startTime, ":", 1, 2)
-    set operatingEnd = $PIECE(hours.endTime, ":", 1, 2)
-    
-    set startHour = $PIECE(..FormatTime(startTime), ":", 1, 2)
-    set endHour = $PIECE(..FormatTime(endTime), ":", 1, 2)
-    
-    if (startHour < operatingStart) || (endHour > operatingEnd) {
-        return 0
+    Try {
+        Set hours = ##class(Demo.PETS.Services.ConfigService).GetOperatingHours()
+        
+        // Obtener horarios operativos usando %Get
+        Set operatingStart = hours.%Get("startTime", "06:00")
+        Set operatingEnd = hours.%Get("endTime", "20:00")
+        
+        // Convertir a segundos para comparación más precisa
+        Set opStartSeconds = ..TimeToSeconds(operatingStart)
+        Set opEndSeconds = ..TimeToSeconds(operatingEnd)
+        
+        // Si no tenemos horarios válidos, aceptar cualquier horario razonable (6 AM - 8 PM)
+        If (opStartSeconds = 0) || (opEndSeconds = 0) {
+            Set opStartSeconds = 6 * 3600  // 06:00
+            Set opEndSeconds = 20 * 3600   // 20:00
+        }
+        
+        // Validar que el slot propuesto esté dentro del rango operativo
+        If (startTime < opStartSeconds) || (endTime > opEndSeconds) {
+            Return 0
+        }
+        
+        Return 1
+        
+    } Catch ex {
+        // En caso de error, ser permisivo con horarios razonables
+        If (startTime >= (6*3600)) && (endTime <= (20*3600)) {
+            Return 1
+        }
+        Return 0
     }
-    
-    return 1
+}
+
+/// Convierte string de tiempo HH:MM a segundos
+ClassMethod TimeToSeconds(timeStr As %String) As %Integer
+{
+    If timeStr = "" Return 0
+    Set h = +$PIECE(timeStr, ":", 1)
+    Set m = +$PIECE(timeStr, ":", 2)
+    Return (h * 3600) + (m * 60)
 }
 
 /// Calcula el precio total para múltiples mascotas usando ConfigService
@@ -287,10 +315,13 @@ ClassMethod ValidateAvailabilitySlot(walkerId As %String, date As %Date, startTi
     set validation.isValid = 1
     set validation.errors = []
     
-    // Validar horarios operativos
+    // Validar horarios operativos con mensaje informativo
     if '..ValidateOperatingHours(startTime, endTime) {
         set validation.isValid = 0
-        do validation.errors.%Push("Horario fuera del horario operativo")
+        set hours = ##class(Demo.PETS.Services.ConfigService).GetOperatingHours()
+        set opStart = $GET(hours.startTime, "06:00")
+        set opEnd = $GET(hours.endTime, "20:00")
+        do validation.errors.%Push("Horario debe estar entre " _ opStart _ " y " _ opEnd _ " (horario operativo)")
     }
     
     // Validar conflictos de horario
@@ -299,17 +330,30 @@ ClassMethod ValidateAvailabilitySlot(walkerId As %String, date As %Date, startTi
         do validation.errors.%Push("Conflicto de horario con slot existente")
     }
     
-    // Validar capacidad usando límites del sistema
+    // Validar capacidad usando límites del sistema con mensaje informativo
     set limits = ##class(Demo.PETS.Services.ConfigService).GetSystemLimits()
-    if capacity > limits.maxPetsPerWalk {
+    set maxAllowed = limits.%Get("maxPetsPerWalk", 5)  // Usar %Get con default
+    if capacity > maxAllowed {
         set validation.isValid = 0
-        do validation.errors.%Push("Capacidad excede límite máximo por paseo: " _ limits.maxPetsPerWalk)
+        do validation.errors.%Push("Máximo " _ maxAllowed _ " mascotas permitidas por turno")
+    }
+    
+    // Validar que la capacidad sea al menos 1
+    if capacity < 1 {
+        set validation.isValid = 0
+        do validation.errors.%Push("Debe permitir al menos 1 mascota")
     }
     
     // Validar que la fecha no sea en el pasado
     if date < (+$HOROLOG) {
         set validation.isValid = 0
         do validation.errors.%Push("No se puede crear disponibilidad en fechas pasadas")
+    }
+    
+    // Validar que hora inicio < hora fin
+    if startTime >= endTime {
+        set validation.isValid = 0
+        do validation.errors.%Push("La hora de inicio debe ser anterior a la hora de fin")
     }
     
     return validation
