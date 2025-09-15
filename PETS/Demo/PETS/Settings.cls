@@ -1,6 +1,6 @@
 /// Configuraciones globales del sistema de programación de paseos
 /// Permite configurar parámetros operativos de manera centralizada
-Class Demo.PETS.Scheduling.AppSettings Extends %Persistent
+Class Demo.PETS.Settings Extends %Persistent
 {
 
 /// Clave única de la configuración
@@ -13,7 +13,7 @@ Property SettingValue As %String(MAXLEN = 500) [ Required ];
 Property SettingType As %String(VALUELIST = ",TIME,INTEGER,STRING,BOOLEAN,DECIMAL") [ Required ];
 
 /// Descripción de la configuración
-Property Description As %String(MAXLEN = 2000);
+Property Description As %String(MAXLEN = 1000);
 
 /// Categoría de la configuración para organización
 Property Category As %String(MAXLEN = 50) [ InitialExpression = "GENERAL" ];
