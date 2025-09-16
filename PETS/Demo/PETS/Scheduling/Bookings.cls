@@ -34,7 +34,7 @@ Property Amount As %Numeric;
 Property Currency As %String [ InitialExpression = "USD" ];
 
 /// Instrucciones especiales del owner
-Property SpecialInstructions As %Text;
+Property SpecialInstructions As %String(MAXLEN = 2000);
 
 /// Tipo de booking: SUPPLY_DRIVEN (Sprint 2.1)
 Property BookingType As %String [ InitialExpression = "SUPPLY_DRIVEN" ];
@@ -49,7 +49,7 @@ Property CreatedBy As %String;
 Property CancelledBy As %String;
 
 /// Razón de cancelación
-Property CancellationReason As %Text;
+Property CancellationReason As %String(MAXLEN = 1000);
 
 /// Fecha y hora de creación
 Property CreatedAt As %TimeStamp [ InitialExpression = {$ZDATETIME($HOROLOG,3)} ];

@@ -175,28 +175,6 @@ ClassMethod GenerateMyBookingsHTML(ownerId As %String, status As %String = "") A
     Return html
 }
 
-/// API: Cancelar reserva
-ClassMethod CancelBookingAPI(bookingId As %String, ownerId As %String, reason As %String) As %Status
-{
-    // Validar parámetros
-    If (bookingId = "") || (ownerId = "") {
-        Write "{""success"": false, ""error"": ""Parámetros requeridos: bookingId y ownerId""}"
-        Return $$$OK
-    }
-    
-    // Cancelar la reserva usando BookingService
-    Set result = ##class(Demo.PETS.Services.BookingService).CancelBooking(bookingId, reason, "OWNER", ownerId)
-    
-    // Responder según resultado
-    If result.success {
-        Write "{""success"": true, ""message"": ""Reserva cancelada exitosamente""}"
-    } Else {
-        Write "{""success"": false, ""error"": """ _ result.error _ """}"
-    }
-    
-    Return $$$OK
-}
-
 /// Ruta de cancelación que redirige después de procesar
 ClassMethod CancelBookingRedirect() As %Status
 {

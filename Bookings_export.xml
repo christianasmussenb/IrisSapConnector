@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="IRIS" version="26" zv="IRIS for UNIX (Ubuntu Server LTS for x86-64 Containers) 2025.1 (Build 230.2U)" ts="2025-09-16 17:02:42">
+<Class name="Demo.PETS.Scheduling.Bookings">
+<Description>
+Sistema de Reservas Persistente - Sprint 2.1
+Clase para gestionar bookings entre owners y walkers</Description>
+<Super>%Persistent</Super>
+<TimeChanged>67464,61264.166976789</TimeChanged>
+<TimeCreated>67464,61135.716022807</TimeCreated>
+
+<Property name="Owner">
+<Description>
+Owner que hace la reserva</Description>
+<Type>Demo.PETS.Owners</Type>
+<Required>1</Required>
+</Property>
+
+<Property name="Pet">
+<Description>
+Mascota que será paseada</Description>
+<Type>Demo.PETS.Pets</Type>
+<Required>1</Required>
+</Property>
+
+<Property name="Walker">
+<Description>
+Walker asignado al paseo</Description>
+<Type>Demo.PETS.Walkers</Type>
+<Required>1</Required>
+</Property>
+
+<Property name="Availability">
+<Description>
+Referencia al slot de disponibilidad original</Description>
+<Type>Demo.PETS.Availability</Type>
+<Required>1</Required>
+</Property>
+
+<Property name="BookingDate">
+<Description>
+Fecha del paseo</Description>
+<Type>%Date</Type>
+<Required>1</Required>
+</Property>
+
+<Property name="StartTime">
+<Description>
+Hora de inicio del paseo</Description>
+<Type>%Time</Type>
+<Required>1</Required>
+</Property>
+
+<Property name="EndTime">
+<Description>
+Hora de finalización del paseo</Description>
+<Type>%Time</Type>
+<Required>1</Required>
+</Property>
+
+<Property name="Status">
+<Description>
+Estado de la reserva: PENDING, CONFIRMED, COMPLETED, CANCELLED</Description>
+<Type>%String</Type>
+<InitialExpression>"PENDING"</InitialExpression>
+<Required>1</Required>
+</Property>
+
+<Property name="Amount">
+<Description>
+Monto de la reserva</Description>
+<Type>%Numeric</Type>
+</Property>
+
+<Property name="Currency">
+<Description>
+Moneda de la transacción</Description>
+<Type>%String</Type>
+<InitialExpression>"USD"</InitialExpression>
+</Property>
+
+<Property name="SpecialInstructions">
+<Description>
+Instrucciones especiales del owner</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="2000"/>
+</Property>
+
+<Property name="BookingType">
+<Description>
+Tipo de booking: SUPPLY_DRIVEN (Sprint 2.1)</Description>
+<Type>%String</Type>
+<InitialExpression>"SUPPLY_DRIVEN"</InitialExpression>
+</Property>
+
+<Property name="BookingReference">
+<Description>
+Referencia única para tracking</Description>
+<Type>%String</Type>
+</Property>
+
+<Property name="CreatedBy">
+<Description>
+Usuario que creó la reserva</Description>
+<Type>%String</Type>
+</Property>
+
+<Property name="CancelledBy">
+<Description>
+Usuario que canceló (si aplica)</Description>
+<Type>%String</Type>
+</Property>
+
+<Property name="CancellationReason">
+<Description>
+Razón de cancelación</Description>
+<Type>%String</Type>
+<Parameter name="MAXLEN" value="1000"/>
+</Property>
+
+<Property name="CreatedAt">
+<Description>
+Fecha y hora de creación</Description>
+<Type>%TimeStamp</Type>
+<InitialExpression>$ZDATETIME($HOROLOG,3)</InitialExpression>
+</Property>
+
+<Property name="ConfirmedAt">
+<Description>
+Fecha y hora de confirmación por walker</Description>
+<Type>%TimeStamp</Type>
+</Property>
+
+<Property name="CompletedAt">
+<Description>
+Fecha y hora de completado</Description>
+<Type>%TimeStamp</Type>
+</Property>
+
+<Property name="CancelledAt">
+<Description>
+Fecha y hora de cancelación</Description>
+<Type>%TimeStamp</Type>
+</Property>
+
+<Property name="UpdatedAt">
+<Description>
+Última actualización</Description>
+<Type>%TimeStamp</Type>
+<InitialExpression>$ZDATETIME($HOROLOG,3)</InitialExpression>
+</Property>
+
+<UDLText name="T">
+<Content><![CDATA[
+// ÍNDICES PARA PERFORMANCE
+
+]]></Content>
+</UDLText>
+
+<Index name="OwnerIdx">
+<Description>
+Índice por owner para consultas rápidas</Description>
+<Properties>Owner</Properties>
+</Index>
+
+<Index name="WalkerIdx">
+<Description>
+Índice por walker para agenda</Description>
+<Properties>Walker</Properties>
+</Index>
+
+<Index name="StatusIdx">
+<Description>
+Índice por estado para filtros</Description>
+<Properties>Status</Properties>
+</Index>
+
+<Index name="DateIdx">
+<Description>
+Índice por fecha para consultas temporales</Description>
+<Properties>BookingDate</Properties>
+</Index>
+
+<Index name="AvailabilityIdx">
+<Description>
+Índice por availability para validaciones</Description>
+<Properties>Availability</Properties>
+</Index>
+
+<Index name="ReferenceIdx">
+<Description>
+Índice único por referencia de booking</Description>
+<Properties>BookingReference</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Index name="OwnerStatusIdx">
+<Description>
+Índice compuesto para consultas complejas</Description>
+<Properties>Owner,Status</Properties>
+</Index>
+
+<Index name="WalkerDateIdx">
+<Description>
+Índice compuesto para walker por fecha</Description>
+<Properties>Walker,BookingDate</Properties>
+</Index>
+
+<Index name="ActiveBookingsIdx">
+<Description>
+Índice para bookings activos (sin condición por compatibilidad)</Description>
+<Properties>Status,BookingDate</Properties>
+</Index>
+
+<UDLText name="T">
+<Content><![CDATA[
+// MÉTODOS DE CLASE
+
+]]></Content>
+</UDLText>
+
+<Method name="GenerateBookingReference">
+<Description>
+Genera una referencia única para el booking</Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+    Set timestamp = $TRANSLATE($ZDATETIME($HOROLOG, 3), " :-", "")
+    Set random = $RANDOM(9999) + 1000
+    Return "BOOK-" _ timestamp _ "-" _ random
+]]></Implementation>
+</Method>
+
+<Method name="CalculateAmount">
+<Description>
+Calcula el monto basado en configuración del walker y duración</Description>
+<ReturnType>%Numeric</ReturnType>
+<Implementation><![CDATA[
+    Try {
+        // Obtener tarifa base del walker (asumiendo que existe)
+        Set walker = ..Walker
+        If '$IsObject(walker) Return 0
+        
+        // Calcular duración en horas
+        Set duration = (..EndTime - ..StartTime) / 3600
+        If duration <= 0 Set duration = 1
+        
+        // Tarifa base por hora (placeholder - se puede configurar)
+        Set baseRate = 25.00
+        
+        // Si hay tarifa especial en Availability, usarla
+        Set availability = ..Availability
+        If $IsObject(availability) && (availability.SpecialRate > 0) {
+            Set baseRate = availability.SpecialRate
+        }
+        
+        Return duration * baseRate
+        
+    } Catch ex {
+        Return 0
+    }
+]]></Implementation>
+</Method>
+
+<Method name="IsModifiable">
+<Description>
+Verifica si el booking se puede modificar</Description>
+<ReturnType>%Boolean</ReturnType>
+<Implementation><![CDATA[
+    // Solo se pueden modificar bookings PENDING
+    If ..Status '= "PENDING" Return 0
+    
+    // No se pueden modificar bookings del pasado
+    Set today = +$HOROLOG
+    If ..BookingDate < today Return 0
+    
+    // Si es hoy, verificar que no haya pasado la hora
+    If ..BookingDate = today {
+        Set currentTime = $PIECE($HOROLOG, ",", 2)
+        If ..StartTime <= currentTime Return 0
+    }
+    
+    Return 1
+]]></Implementation>
+</Method>
+
+<Method name="UpdateStatus">
+<Description>
+Actualiza el estado del booking con auditoría</Description>
+<FormalSpec>newStatus:%String,userId:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    Set sc = $$$OK
+    Try {
+        Set oldStatus = ..Status
+        Set ..Status = newStatus
+        Set ..UpdatedAt = $ZDATETIME($HOROLOG, 3)
+        
+        // Actualizar timestamps específicos según el estado
+        If newStatus = "CONFIRMED" {
+            Set ..ConfirmedAt = $ZDATETIME($HOROLOG, 3)
+        } ElseIf newStatus = "COMPLETED" {
+            Set ..CompletedAt = $ZDATETIME($HOROLOG, 3)
+        } ElseIf newStatus = "CANCELLED" {
+            Set ..CancelledAt = $ZDATETIME($HOROLOG, 3)
+            If userId '= "" Set ..CancelledBy = userId
+        }
+        
+        Set sc = ..%Save()
+        
+    } Catch ex {
+        Set sc = ex.AsStatus()
+    }
+    
+    Return sc
+]]></Implementation>
+</Method>
+
+<Method name="GetTimeSlotInfo">
+<Description>
+Obtiene información resumida del time slot</Description>
+<ReturnType>%DynamicObject</ReturnType>
+<Implementation><![CDATA[
+    Set info = {}
+    
+    Try {
+        Set info.date = $ZDATE(..BookingDate, 3)
+        Set info.startTime = $ZTIME(..StartTime)
+        Set info.endTime = $ZTIME(..EndTime)
+        Set info.duration = $FNUMBER((..EndTime - ..StartTime) / 3600, "", 1) _ " hora(s)"
+        Set info.status = ..Status
+        Set info.reference = ..BookingReference
+        
+        // Información del walker
+        If $IsObject(..Walker) {
+            Set info.walker = {}
+            Set info.walker.name = ..Walker.Name
+            Set info.walker.id = ..Walker.%Id()
+        }
+        
+        // Información del owner
+        If $IsObject(..Owner) {
+            Set info.owner = {}
+            Set info.owner.name = ..Owner.Name
+            Set info.owner.id = ..Owner.%Id()
+        }
+        
+        // Información de la mascota
+        If $IsObject(..Pet) {
+            Set info.pet = {}
+            Set info.pet.name = ..Pet.Name
+            Set info.pet.id = ..Pet.%Id()
+        }
+        
+    } Catch ex {
+        Set info.error = ex.DisplayString()
+    }
+    
+    Return info
+]]></Implementation>
+</Method>
+
+<Method name="%OnBeforeSave">
+<Description>
+Validaciones antes de guardar</Description>
+<FormalSpec>insert:%Boolean</FormalSpec>
+<Private>1</Private>
+<ReturnType>%Status</ReturnType>
+<ServerOnly>1</ServerOnly>
+<Implementation><![CDATA[
+    Set sc = $$$OK
+    
+    Try {
+        // Generar referencia si es nuevo
+        If insert && (..BookingReference = "") {
+            Set ..BookingReference = ..GenerateBookingReference()
+        }
+        
+        // Calcular amount si no está establecido
+        If ..Amount = "" || (..Amount = 0) {
+            Set ..Amount = ..CalculateAmount()
+        }
+        
+        // Actualizar UpdatedAt
+        If 'insert {
+            Set ..UpdatedAt = $ZDATETIME($HOROLOG, 3)
+        }
+        
+        // Validar que los tiempos sean consistentes
+        If ..StartTime >= ..EndTime {
+            Return $$$ERROR($$$GeneralError, "Hora de inicio debe ser menor a hora de fin")
+        }
+        
+        // Validar que la fecha no sea en el pasado
+        If insert && (..BookingDate < +$HOROLOG) {
+            Return $$$ERROR($$$GeneralError, "No se pueden crear bookings en fechas pasadas")
+        }
+        
+    } Catch ex {
+        Set sc = ex.AsStatus()
+    }
+    
+    Return sc
+]]></Implementation>
+</Method>
+
+<Method name="%OnAfterSave">
+<Description>
+Cleanup después de guardar</Description>
+<FormalSpec>insert:%Boolean</FormalSpec>
+<Private>1</Private>
+<ReturnType>%Status</ReturnType>
+<ServerOnly>1</ServerOnly>
+<Implementation><![CDATA[
+    Set sc = $$$OK
+    
+    Try {
+        // Si es un insert exitoso y está PENDING, actualizar availability
+        If insert && (..Status = "PENDING") && $IsObject(..Availability) {
+            Set availability = ..Availability
+            Set availability.CurrentBookings = availability.CurrentBookings + 1
+            Set sc = availability.%Save()
+        }
+        
+    } Catch ex {
+        Set sc = ex.AsStatus()
+    }
+    
+    Return sc
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Description>
+Storage definition</Description>
+<Type>%Storage.Persistent</Type>
+<DataLocation>^Demo.PETS.Scheduling.BookingsD</DataLocation>
+<DefaultData>BookingsDefaultData</DefaultData>
+<IdLocation>^Demo.PETS.Scheduling.BookingsD</IdLocation>
+<IndexLocation>^Demo.PETS.Scheduling.BookingsI</IndexLocation>
+<StreamLocation>^Demo.PETS.Scheduling.BookingsS</StreamLocation>
+<Data name="BookingsDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>Owner</Value>
+</Value>
+<Value name="3">
+<Value>Pet</Value>
+</Value>
+<Value name="4">
+<Value>Walker</Value>
+</Value>
+<Value name="5">
+<Value>Availability</Value>
+</Value>
+<Value name="6">
+<Value>BookingDate</Value>
+</Value>
+<Value name="7">
+<Value>StartTime</Value>
+</Value>
+<Value name="8">
+<Value>EndTime</Value>
+</Value>
+<Value name="9">
+<Value>Status</Value>
+</Value>
+<Value name="10">
+<Value>Amount</Value>
+</Value>
+<Value name="11">
+<Value>Currency</Value>
+</Value>
+<Value name="12">
+<Value>SpecialInstructions</Value>
+</Value>
+<Value name="13">
+<Value>BookingType</Value>
+</Value>
+<Value name="14">
+<Value>BookingReference</Value>
+</Value>
+<Value name="15">
+<Value>CreatedBy</Value>
+</Value>
+<Value name="16">
+<Value>CancelledBy</Value>
+</Value>
+<Value name="17">
+<Value>CancellationReason</Value>
+</Value>
+<Value name="18">
+<Value>CreatedAt</Value>
+</Value>
+<Value name="19">
+<Value>ConfirmedAt</Value>
+</Value>
+<Value name="20">
+<Value>CompletedAt</Value>
+</Value>
+<Value name="21">
+<Value>CancelledAt</Value>
+</Value>
+<Value name="22">
+<Value>UpdatedAt</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>
