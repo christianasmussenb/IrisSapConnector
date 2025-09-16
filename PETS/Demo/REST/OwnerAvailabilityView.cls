@@ -425,29 +425,30 @@ ClassMethod BookSlot() As %Status
         Set time = %request.Get("time")
         Set walkerId = %request.Get("walkerId") 
         Set petId = %request.Get("petId")
+        Set ownerId = %request.Get("ownerId")
+        Set instructions = %request.Get("instructions")
         
-        // Validar disponibilidad
-        Set validation = ##class(Demo.PETS.Services.SchedulingService).ValidateAvailabilitySlot(walkerId, $ZDATEH(date, 8), $ZTIMEH(time), $ZTIMEH(time) + 3600)
-        
-        If 'validation.isValid {
+        // Validar parámetros requeridos
+        If (date = "") || (time = "") || (walkerId = "") || (petId = "") || (ownerId = "") {
             Set result = {}
             Set result.success = 0
-            Set result.error = "Slot no disponible"
-            Set result.details = validation.errors
+            Set result.error = "Parámetros requeridos faltantes (date, time, walkerId, petId, ownerId)"
             Write result.%ToJSON()
             Return $$$OK
         }
         
-        // Crear booking (placeholder - se implementará en Sprint 2.1)
-        Set result = {}
-        Set result.success = 1
-        Set result.message = "Reserva confirmada exitosamente"
-        Set result.bookingId = "BOOK-" _ $RANDOM(9999) + 1000
-        Set result.details = {}
-        Set result.details.date = date
-        Set result.details.time = time
-        Set result.details.walker = "Walker " _ walkerId
-        Set result.details.pet = "Pet ID " _ petId
+        // Buscar availability slot
+        Set availabilityId = ##class(Demo.PETS.Services.BookingService).FindAvailabilitySlot(walkerId, date, time)
+        If availabilityId = "" {
+            Set result = {}
+            Set result.success = 0
+            Set result.error = "Slot de disponibilidad no encontrado"
+            Write result.%ToJSON()
+            Return $$$OK
+        }
+        
+        // Crear booking usando BookingService
+        Set result = ##class(Demo.PETS.Services.BookingService).CreateBooking(ownerId, petId, walkerId, availabilityId, instructions)
         
         Write result.%ToJSON()
         Return $$$OK
@@ -481,7 +482,7 @@ ClassMethod GetAvailabilityData(year As %String, month As %String) As %Status
     Set startDate = $ZDATEH(year _ "-" _ $TR($JUSTIFY(month,2)," ","0") _ "-01", 8)
     Set endDate = ..GetLastDayOfMonth(year, month)
     
-    Set availability = ##class(Demo.PETS.Services.SchedulingService).SearchAvailability(startDate, endDate)
+    Set availability = ..GetRealTimeAvailability(startDate, endDate)
     
     Set result = {}
     Set result.success = 1
@@ -611,6 +612,64 @@ ClassMethod GetCalendarJavaScript() As %String
     
     Set js = js _ "</script>"
     Return js
+}
+
+/// Obtiene disponibilidad actualizada considerando bookings actuales
+/// Parámetros: startDate, endDate
+/// Retorna: Array de availability con slots disponibles reales
+ClassMethod GetRealTimeAvailability(startDate As %Date, endDate As %Date) As %DynamicArray
+{
+    Set availability = []
+    
+    Try {
+        // Query para obtener availability con CurrentBookings actualizado
+        Set query = "SELECT ID, Walker, Walker->Name AS WalkerName, AvailableDate, StartTime, EndTime, MaxPets, CurrentBookings, SpecialRate, Notes FROM Demo_PETS.Availability WHERE AvailableDate BETWEEN ? AND ? AND IsActive = 1 ORDER BY AvailableDate, StartTime"
+        
+        Set stmt = ##class(%SQL.Statement).%New()
+        Set sc = stmt.%Prepare(query)
+        If $$$ISERR(sc) Return availability
+        
+        Set rs = stmt.%Execute(startDate, endDate)
+        
+        While rs.%Next() {
+            Set slot = {}
+            Set slot.id = rs.%Get("ID")
+            Set slot.walkerId = rs.%Get("Walker")
+            Set slot.walkerName = rs.%Get("WalkerName")
+            Set slot.date = $ZDATE(rs.%Get("AvailableDate"), 3)
+            Set slot.startTime = $ZTIME(rs.%Get("StartTime"))
+            Set slot.endTime = $ZTIME(rs.%Get("EndTime"))
+            Set slot.maxPets = rs.%Get("MaxPets")
+            Set slot.currentBookings = rs.%Get("CurrentBookings")
+            Set slot.availableSlots = slot.maxPets - slot.currentBookings
+            Set slot.specialRate = rs.%Get("SpecialRate")
+            Set slot.notes = rs.%Get("Notes")
+            Set slot.isAvailable = (slot.availableSlots > 0)
+            
+            // Calcular estado de disponibilidad
+            If slot.availableSlots <= 0 {
+                Set slot.status = "full"
+                Set slot.statusText = "Completo"
+            } ElseIf slot.availableSlots = 1 {
+                Set slot.status = "low"
+                Set slot.statusText = "Último lugar"
+            } ElseIf slot.availableSlots <= (slot.maxPets * 0.5) {
+                Set slot.status = "medium"
+                Set slot.statusText = slot.availableSlots _ " lugares"
+            } Else {
+                Set slot.status = "high" 
+                Set slot.statusText = slot.availableSlots _ " lugares"
+            }
+            
+            Do availability.%Push(slot)
+        }
+        
+    } Catch ex {
+        // En caso de error, usar método original como fallback
+        Return ##class(Demo.PETS.Services.SchedulingService).SearchAvailability(startDate, endDate)
+    }
+    
+    Return availability
 }
 
 }

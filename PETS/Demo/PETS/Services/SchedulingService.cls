@@ -242,21 +242,32 @@ ClassMethod GetAvailabilityStats(startDate As %Date, endDate As %Date) As %Dynam
     return stats
 }
 
-/// Verifica si hay conflictos de horario para un walker
+/// Verifica si hay conflictos de horario para un walker específico
 ClassMethod CheckScheduleConflicts(walkerId As %String, date As %Date, startTime As %Time, endTime As %Time) As %Boolean
 {
-    set sql = "SELECT ID FROM Demo_PETS.Availability "
+    // Debug: registrar parámetros de búsqueda
+    // Write "DEBUG: Buscando conflictos para Walker=", walkerId, ", Date=", $ZDATE(date, 1), ", Time=", $ZTIME(startTime, 1), "-", $ZTIME(endTime, 1), !
+    
+    set sql = "SELECT ID, StartTime, EndTime FROM Demo_PETS.Availability "
             _ "WHERE Walker = ? AND AvailableDate = ? AND IsActive = 1 "
             _ "AND ((StartTime <= ? AND EndTime > ?) OR (StartTime < ? AND EndTime >= ?))"
     
     set statement = ##class(%SQL.Statement).%New()
     set status = statement.%Prepare(sql)
     if $$$ISERR(status) {
+        // Write "DEBUG: Error preparando SQL: ", $SYSTEM.Status.GetOneErrorText(status), !
         return 0
     }
     
     set resultSet = statement.%Execute(walkerId, date, startTime, startTime, endTime, endTime)
-    return resultSet.%Next()
+    set hasConflict = resultSet.%Next()
+    
+    // Debug: mostrar resultados si hay conflicto
+    // if hasConflict {
+    //     Write "DEBUG: Conflicto encontrado - ID=", resultSet.%Get("ID"), ", Existing=", $ZTIME(resultSet.%Get("StartTime"), 1), "-", $ZTIME(resultSet.%Get("EndTime"), 1), !
+    // }
+    
+    return hasConflict
 }
 
 /// Obtiene los próximos slots disponibles para un walker
@@ -327,7 +338,7 @@ ClassMethod ValidateAvailabilitySlot(walkerId As %String, date As %Date, startTi
     // Validar conflictos de horario
     if ..CheckScheduleConflicts(walkerId, date, startTime, endTime) {
         set validation.isValid = 0
-        do validation.errors.%Push("Conflicto de horario con slot existente")
+        do validation.errors.%Push("Conflicto de horario con slot existente para walker " _ walkerId _ " el " _ $ZDATE(date, 1) _ " de " _ $ZTIME(startTime, 1) _ " a " _ $ZTIME(endTime, 1))
     }
     
     // Validar capacidad usando límites del sistema con mensaje informativo

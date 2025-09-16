@@ -1,0 +1,550 @@
+/// Servicio de Lógica de Negocio para Bookings - Sprint 2.1
+/// Maneja todas las operaciones CRUD y validaciones de reservas
+Class Demo.PETS.Services.BookingService Extends Demo.PETS.Services.Base
+{
+
+/// Crear un nuevo booking
+/// Parámetros: ownerId, petId, walkerId, availabilityId, instructions
+/// Retorna: %DynamicObject con resultado de la operación
+ClassMethod CreateBooking(ownerId As %String, petId As %String, walkerId As %String, availabilityId As %String, instructions As %String = "") As %DynamicObject
+{
+    Set result = {}
+    
+    Try {
+        TSTART
+        
+        // 1. Validar disponibilidad en tiempo real
+        Set validation = ..ValidateBooking(availabilityId)
+        If 'validation.success {
+            Set result.success = 0
+            Set result.error = "Slot no disponible"
+            Set result.details = validation
+            TROLLBACK
+            Return result
+        }
+        
+        // 2. Cargar objetos requeridos
+        Set owner = ##class(Demo.PETS.Owners).%OpenId(ownerId)
+        If '$IsObject(owner) {
+            Set result.success = 0
+            Set result.error = "Owner no encontrado"
+            TROLLBACK
+            Return result
+        }
+        
+        Set pet = ##class(Demo.PETS.Pets).%OpenId(petId)
+        If '$IsObject(pet) {
+            Set result.success = 0
+            Set result.error = "Mascota no encontrada"
+            TROLLBACK
+            Return result
+        }
+        
+        Set walker = ##class(Demo.PETS.Walkers).%OpenId(walkerId)
+        If '$IsObject(walker) {
+            Set result.success = 0
+            Set result.error = "Walker no encontrado"
+            TROLLBACK
+            Return result
+        }
+        
+        Set availability = ##class(Demo.PETS.Availability).%OpenId(availabilityId)
+        If '$IsObject(availability) {
+            Set result.success = 0
+            Set result.error = "Slot de disponibilidad no encontrado"
+            TROLLBACK
+            Return result
+        }
+        
+        // 3. Crear nuevo booking
+        Set booking = ##class(Demo.PETS.Scheduling.Bookings).%New()
+        Set booking.Owner = owner
+        Set booking.Pet = pet
+        Set booking.Walker = walker
+        Set booking.Availability = availability
+        Set booking.BookingDate = availability.AvailableDate
+        Set booking.StartTime = availability.StartTime
+        Set booking.EndTime = availability.EndTime
+        Set booking.Status = "PENDING"
+        Set booking.SpecialInstructions = instructions
+        Set booking.CreatedBy = "OWNER-" _ ownerId
+        
+        // 4. Calcular amount automáticamente
+        Set booking.Amount = booking.CalculateAmount()
+        
+        // 5. Generar referencia única
+        Set booking.BookingReference = booking.GenerateBookingReference()
+        
+        // 6. Guardar booking (esto actualizará CurrentBookings automáticamente)
+        Set sc = booking.%Save()
+        If $$$ISERR(sc) {
+            Set result.success = 0
+            Set result.error = "Error guardando booking: " _ $SYSTEM.Status.GetErrorText(sc)
+            TROLLBACK
+            Return result
+        }
+        
+        TCOMMIT
+        
+        // 7. Retornar resultado exitoso
+        Set result.success = 1
+        Set result.message = "Reserva creada exitosamente"
+        Set result.bookingId = booking.%Id()
+        Set result.bookingReference = booking.BookingReference
+        Set result.amount = booking.Amount
+        Set result.currency = booking.Currency
+        Set result.details = booking.GetTimeSlotInfo()
+        
+    } Catch ex {
+        TROLLBACK
+        Set result.success = 0
+        Set result.error = "Error interno: " _ ex.DisplayString()
+    }
+    
+    Return result
+}
+
+/// Validar disponibilidad de un slot antes de crear booking
+/// Parámetro: availabilityId
+/// Retorna: %DynamicObject con resultado de validación
+ClassMethod ValidateBooking(availabilityId As %String) As %DynamicObject
+{
+    Set result = {}
+    
+    Try {
+        // 1. Verificar que availability existe
+        Set availability = ##class(Demo.PETS.Availability).%OpenId(availabilityId)
+        If '$IsObject(availability) {
+            Set result.success = 0
+            Set result.error = "Slot de disponibilidad no encontrado"
+            Set result.errorCode = "SLOT_NOT_FOUND"
+            Return result
+        }
+        
+        // 2. Verificar que está activo
+        If 'availability.IsActive {
+            Set result.success = 0
+            Set result.error = "Slot no está activo"
+            Set result.errorCode = "SLOT_INACTIVE"
+            Return result
+        }
+        
+        // 3. Verificar que no se supere MaxPets
+        If availability.CurrentBookings >= availability.MaxPets {
+            Set result.success = 0
+            Set result.error = "Slot completamente reservado"
+            Set result.errorCode = "SLOT_FULL"
+            Set result.currentBookings = availability.CurrentBookings
+            Set result.maxPets = availability.MaxPets
+            Return result
+        }
+        
+        // 4. Verificar que no sea en el pasado
+        Set today = +$HOROLOG
+        If availability.AvailableDate < today {
+            Set result.success = 0
+            Set result.error = "No se puede reservar en fechas pasadas"
+            Set result.errorCode = "DATE_PAST"
+            Return result
+        }
+        
+        // 5. Si es hoy, verificar que no haya pasado la hora
+        If availability.AvailableDate = today {
+            Set currentTime = $PIECE($HOROLOG, ",", 2)
+            If availability.StartTime <= currentTime {
+                Set result.success = 0
+                Set result.error = "No se puede reservar en horarios pasados"
+                Set result.errorCode = "TIME_PAST"
+                Return result
+            }
+        }
+        
+        // 6. Verificar que walker está activo
+        Set walker = availability.Walker
+        If $IsObject(walker) && '$GET(walker.IsActive, 1) {
+            Set result.success = 0
+            Set result.error = "Walker no está disponible"
+            Set result.errorCode = "WALKER_INACTIVE"
+            Return result
+        }
+        
+        // 7. Verificar límites de booking adelantado (configuración)
+        Set config = ##class(Demo.PETS.Services.ConfigService).GetSystemLimits()
+        Set maxDaysAhead = config.%Get("maxBookingDays", 30)
+        Set maxDate = today + maxDaysAhead
+        If availability.AvailableDate > maxDate {
+            Set result.success = 0
+            Set result.error = "No se puede reservar tan adelante (máximo " _ maxDaysAhead _ " días)"
+            Set result.errorCode = "DATE_TOO_FUTURE"
+            Return result
+        }
+        
+        // 8. Todo válido
+        Set result.success = 1
+        Set result.message = "Slot disponible para reservar"
+        Set result.availableSlots = availability.MaxPets - availability.CurrentBookings
+        Set result.amount = availability.SpecialRate
+        
+    } Catch ex {
+        Set result.success = 0
+        Set result.error = "Error validando disponibilidad: " _ ex.DisplayString()
+        Set result.errorCode = "VALIDATION_ERROR"
+    }
+    
+    Return result
+}
+
+/// Cancelar un booking existente
+/// Parámetros: bookingId, userId (quien cancela), reason
+/// Retorna: %DynamicObject con resultado de operación
+ClassMethod CancelBooking(bookingId As %String, userId As %String, reason As %String = "") As %DynamicObject
+{
+    Set result = {}
+    
+    Try {
+        TSTART
+        
+        // 1. Cargar booking
+        Set booking = ##class(Demo.PETS.Scheduling.Bookings).%OpenId(bookingId)
+        If '$IsObject(booking) {
+            Set result.success = 0
+            Set result.error = "Booking no encontrado"
+            TROLLBACK
+            Return result
+        }
+        
+        // 2. Verificar que se puede modificar
+        If 'booking.IsModifiable() {
+            Set result.success = 0
+            Set result.error = "Este booking no se puede cancelar (estado: " _ booking.Status _ ")"
+            TROLLBACK
+            Return result
+        }
+        
+        // 3. Verificar ownership (básico - se puede mejorar)
+        Set isOwner = ($FIND(userId, "OWNER-") = 7)
+        Set isWalker = ($FIND(userId, "WALKER-") = 8)
+        Set isAdmin = ($FIND(userId, "ADMIN-") = 7)
+        
+        If 'isOwner && 'isWalker && 'isAdmin {
+            Set result.success = 0
+            Set result.error = "Sin permisos para cancelar este booking"
+            TROLLBACK
+            Return result
+        }
+        
+        // 4. Actualizar estado a CANCELLED
+        Set booking.CancellationReason = reason
+        Set sc = booking.UpdateStatus("CANCELLED", userId)
+        If $$$ISERR(sc) {
+            Set result.success = 0
+            Set result.error = "Error actualizando estado: " _ $SYSTEM.Status.GetErrorText(sc)
+            TROLLBACK
+            Return result
+        }
+        
+        // 5. Liberar slot (decrementar CurrentBookings)
+        Set availability = booking.Availability
+        If $IsObject(availability) && (availability.CurrentBookings > 0) {
+            Set availability.CurrentBookings = availability.CurrentBookings - 1
+            Set sc = availability.%Save()
+            If $$$ISERR(sc) {
+                Set result.success = 0
+                Set result.error = "Error liberando slot: " _ $SYSTEM.Status.GetErrorText(sc)
+                TROLLBACK
+                Return result
+            }
+        }
+        
+        TCOMMIT
+        
+        // 6. Resultado exitoso
+        Set result.success = 1
+        Set result.message = "Booking cancelado exitosamente"
+        Set result.bookingReference = booking.BookingReference
+        Set result.cancelledAt = booking.CancelledAt
+        Set result.cancelledBy = booking.CancelledBy
+        
+    } Catch ex {
+        TROLLBACK
+        Set result.success = 0
+        Set result.error = "Error cancelando booking: " _ ex.DisplayString()
+    }
+    
+    Return result
+}
+
+/// Obtener bookings de un owner
+/// Parámetros: ownerId, status (opcional), limit
+/// Retorna: %DynamicObject con lista de bookings
+ClassMethod GetBookingsByOwner(ownerId As %String, status As %String = "", limit As %Integer = 50) As %DynamicObject
+{
+    Set result = {}
+    Set result.bookings = []
+    
+    Try {
+        Set query = "SELECT ID, BookingReference, BookingDate, StartTime, EndTime, Status, Amount, Walker->Name AS WalkerName, Pet->Name AS PetName FROM Demo_PETS_Scheduling.Bookings WHERE Owner = ?"
+        
+        If status '= "" {
+            Set query = query _ " AND Status = ?"
+        }
+        
+        Set query = query _ " ORDER BY BookingDate DESC, StartTime DESC"
+        
+        If limit > 0 {
+            Set query = query _ " LIMIT " _ limit
+        }
+        
+        Set stmt = ##class(%SQL.Statement).%New()
+        Set sc = stmt.%Prepare(query)
+        If $$$ISERR(sc) {
+            Set result.success = 0
+            Set result.error = "Error preparando consulta"
+            Return result
+        }
+        
+        If status '= "" {
+            Set rs = stmt.%Execute(ownerId, status)
+        } Else {
+            Set rs = stmt.%Execute(ownerId)
+        }
+        
+        While rs.%Next() {
+            Set booking = {}
+            Set booking.id = rs.%Get("ID")
+            Set booking.reference = rs.%Get("BookingReference")
+            Set booking.date = $ZDATE(rs.%Get("BookingDate"), 3)
+            Set booking.startTime = $ZTIME(rs.%Get("StartTime"))
+            Set booking.endTime = $ZTIME(rs.%Get("EndTime"))
+            Set booking.status = rs.%Get("Status")
+            Set booking.amount = rs.%Get("Amount")
+            Set booking.walkerName = rs.%Get("WalkerName")
+            Set booking.petName = rs.%Get("PetName")
+            
+            Do result.bookings.%Push(booking)
+        }
+        
+        Set result.success = 1
+        Set result.count = result.bookings.%Size()
+        
+    } Catch ex {
+        Set result.success = 0
+        Set result.error = "Error consultando bookings: " _ ex.DisplayString()
+    }
+    
+    Return result
+}
+
+/// Obtener bookings de un walker
+/// Parámetros: walkerId, status (opcional), limit
+/// Retorna: %DynamicObject con lista de bookings
+ClassMethod GetBookingsByWalker(walkerId As %String, status As %String = "", limit As %Integer = 50) As %DynamicObject
+{
+    Set result = {}
+    Set result.bookings = []
+    
+    Try {
+        Set query = "SELECT ID, BookingReference, BookingDate, StartTime, EndTime, Status, Amount, Owner->Name AS OwnerName, Pet->Name AS PetName, SpecialInstructions FROM Demo_PETS_Scheduling.Bookings WHERE Walker = ?"
+        
+        If status '= "" {
+            Set query = query _ " AND Status = ?"
+        }
+        
+        Set query = query _ " ORDER BY BookingDate ASC, StartTime ASC"
+        
+        If limit > 0 {
+            Set query = query _ " LIMIT " _ limit
+        }
+        
+        Set stmt = ##class(%SQL.Statement).%New()
+        Set sc = stmt.%Prepare(query)
+        If $$$ISERR(sc) {
+            Set result.success = 0
+            Set result.error = "Error preparando consulta"
+            Return result
+        }
+        
+        If status '= "" {
+            Set rs = stmt.%Execute(walkerId, status)
+        } Else {
+            Set rs = stmt.%Execute(walkerId)
+        }
+        
+        While rs.%Next() {
+            Set booking = {}
+            Set booking.id = rs.%Get("ID")
+            Set booking.reference = rs.%Get("BookingReference")
+            Set booking.date = $ZDATE(rs.%Get("BookingDate"), 3)
+            Set booking.startTime = $ZTIME(rs.%Get("StartTime"))
+            Set booking.endTime = $ZTIME(rs.%Get("EndTime"))
+            Set booking.status = rs.%Get("Status")
+            Set booking.amount = rs.%Get("Amount")
+            Set booking.ownerName = rs.%Get("OwnerName")
+            Set booking.petName = rs.%Get("PetName")
+            Set booking.instructions = rs.%Get("SpecialInstructions")
+            
+            Do result.bookings.%Push(booking)
+        }
+        
+        Set result.success = 1
+        Set result.count = result.bookings.%Size()
+        
+    } Catch ex {
+        Set result.success = 0
+        Set result.error = "Error consultando bookings: " _ ex.DisplayString()
+    }
+    
+    Return result
+}
+
+/// Confirmar un booking (walker acepta la reserva)
+/// Parámetros: bookingId, walkerId
+/// Retorna: %DynamicObject con resultado
+ClassMethod ConfirmBooking(bookingId As %String, walkerId As %String) As %DynamicObject
+{
+    Set result = {}
+    
+    Try {
+        TSTART
+        
+        // 1. Cargar booking
+        Set booking = ##class(Demo.PETS.Scheduling.Bookings).%OpenId(bookingId)
+        If '$IsObject(booking) {
+            Set result.success = 0
+            Set result.error = "Booking no encontrado"
+            TROLLBACK
+            Return result
+        }
+        
+        // 2. Verificar que el walker es el correcto
+        If booking.Walker.%Id() '= walkerId {
+            Set result.success = 0
+            Set result.error = "Solo el walker asignado puede confirmar este booking"
+            TROLLBACK
+            Return result
+        }
+        
+        // 3. Verificar que está en estado PENDING
+        If booking.Status '= "PENDING" {
+            Set result.success = 0
+            Set result.error = "Solo se pueden confirmar bookings pendientes (estado actual: " _ booking.Status _ ")"
+            TROLLBACK
+            Return result
+        }
+        
+        // 4. Confirmar booking
+        Set sc = booking.UpdateStatus("CONFIRMED", "WALKER-" _ walkerId)
+        If $$$ISERR(sc) {
+            Set result.success = 0
+            Set result.error = "Error confirmando booking: " _ $SYSTEM.Status.GetErrorText(sc)
+            TROLLBACK
+            Return result
+        }
+        
+        TCOMMIT
+        
+        // 5. Resultado exitoso
+        Set result.success = 1
+        Set result.message = "Booking confirmado exitosamente"
+        Set result.bookingReference = booking.BookingReference
+        Set result.confirmedAt = booking.ConfirmedAt
+        Set result.details = booking.GetTimeSlotInfo()
+        
+    } Catch ex {
+        TROLLBACK
+        Set result.success = 0
+        Set result.error = "Error confirmando booking: " _ ex.DisplayString()
+    }
+    
+    Return result
+}
+
+/// Obtener bookings por fecha (para walkers ver su agenda diaria)
+/// Parámetros: date (YYYY-MM-DD), walkerId
+/// Retorna: %DynamicObject con bookings del día
+ClassMethod GetBookingsByDate(date As %String, walkerId As %String = "") As %DynamicObject
+{
+    Set result = {}
+    Set result.bookings = []
+    
+    Try {
+        Set dateValue = $ZDATEH(date, 8)
+        
+        Set query = "SELECT ID, BookingReference, StartTime, EndTime, Status, Owner->Name AS OwnerName, Pet->Name AS PetName, Walker->Name AS WalkerName, SpecialInstructions FROM Demo_PETS_Scheduling.Bookings WHERE BookingDate = ?"
+        
+        If walkerId '= "" {
+            Set query = query _ " AND Walker = ?"
+        }
+        
+        Set query = query _ " ORDER BY StartTime ASC"
+        
+        Set stmt = ##class(%SQL.Statement).%New()
+        Set sc = stmt.%Prepare(query)
+        If $$$ISERR(sc) {
+            Set result.success = 0
+            Set result.error = "Error preparando consulta"
+            Return result
+        }
+        
+        If walkerId '= "" {
+            Set rs = stmt.%Execute(dateValue, walkerId)
+        } Else {
+            Set rs = stmt.%Execute(dateValue)
+        }
+        
+        While rs.%Next() {
+            Set booking = {}
+            Set booking.id = rs.%Get("ID")
+            Set booking.reference = rs.%Get("BookingReference")
+            Set booking.startTime = $ZTIME(rs.%Get("StartTime"))
+            Set booking.endTime = $ZTIME(rs.%Get("EndTime"))
+            Set booking.status = rs.%Get("Status")
+            Set booking.ownerName = rs.%Get("OwnerName")
+            Set booking.petName = rs.%Get("PetName")
+            Set booking.walkerName = rs.%Get("WalkerName")
+            Set booking.instructions = rs.%Get("SpecialInstructions")
+            
+            Do result.bookings.%Push(booking)
+        }
+        
+        Set result.success = 1
+        Set result.date = date
+        Set result.count = result.bookings.%Size()
+        
+    } Catch ex {
+        Set result.success = 0
+        Set result.error = "Error consultando bookings por fecha: " _ ex.DisplayString()
+    }
+    
+    Return result
+}
+
+/// Buscar availability ID por parámetros de walker, fecha y hora
+/// Método auxiliar para integración con OwnerAvailabilityView
+/// Parámetros: walkerId, date (YYYY-MM-DD), time (HH:MM)
+/// Retorna: availability ID o "" si no encontrado
+ClassMethod FindAvailabilitySlot(walkerId As %String, date As %String, time As %String) As %String
+{
+    Try {
+        Set dateValue = $ZDATEH(date, 8)
+        Set timeValue = $ZTIMEH(time)
+        
+        Set query = "SELECT ID FROM Demo_PETS.Availability WHERE Walker = ? AND AvailableDate = ? AND StartTime <= ? AND EndTime > ? AND IsActive = 1"
+        
+        Set stmt = ##class(%SQL.Statement).%New()
+        Set sc = stmt.%Prepare(query)
+        If $$$ISERR(sc) Return ""
+        
+        Set rs = stmt.%Execute(walkerId, dateValue, timeValue, timeValue)
+        If rs.%Next() {
+            Return rs.%Get("ID")
+        }
+        
+    } Catch ex {
+        // Error silencioso, retornar vacío
+    }
+    
+    Return ""
+}
+
+}

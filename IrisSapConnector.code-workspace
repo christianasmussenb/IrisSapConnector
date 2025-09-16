@@ -2,6 +2,14 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"name": "localhost:USER",
+			"uri": "isfs://localhost:user/"
+		},
+		{
+			"name": "localhost (/csp/user)",
+			"uri": "isfs://localhost:user/csp/user?csp"
 		}
 	],
 	"settings": {}

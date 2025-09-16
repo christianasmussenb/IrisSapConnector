@@ -24,6 +24,15 @@ ClassMethod OnPage() As %Status
         Set walkerId = +selectedWalkerId
     }
     
+    // IMPORTANTE: Mantener walkerId en caso de errores de validación
+    // Si viene de un POST con error, preservar el walker seleccionado
+    If %request.Method = "POST" {
+        Set postedWalkerId = $GET(%request.Data("walker_id", 1), "")
+        If postedWalkerId '= "" {
+            Set walkerId = +postedWalkerId
+        }
+    }
+    
     Set action = $GET(%request.Data("action", 1), "view")
     
     // Procesar acciones POST
@@ -397,6 +406,7 @@ ClassMethod RenderAddForm(walkerId As %Integer, operatingHours As %DynamicObject
     
     Write "<form method='POST' onsubmit='return validateForm()'>"
     Write "<input type='hidden' name='form_action' value='add'>"
+    Write "<input type='hidden' name='walker_id' value='" _ walkerId _ "'>"
     Write "<div class='row'>"
     
     // Fecha - CORREGIDO: permitir fechas futuras desde HOY con límites seguros
@@ -614,9 +624,9 @@ ClassMethod RenderAvailabilityList(walkerId As %Integer, slots As %DynamicArray)
     Write "</div>"
     
     // Agregar modales para edición y duplicación
-    Do ..RenderEditModal()
-    Do ..RenderDuplicateModal()
-    Do ..RenderTemplateModal()
+    Do ..RenderEditModal(walkerId)
+    Do ..RenderDuplicateModal(walkerId)
+    Do ..RenderTemplateModal(walkerId)
     
     // JS común para acciones CRUD avanzadas
     Write "<script>"
@@ -629,9 +639,10 @@ ClassMethod RenderAvailabilityList(walkerId As %Integer, slots As %DynamicArray)
     Write "  const f=document.createElement('form');f.method='POST';"
     Write "  const a=document.createElement('input');a.type='hidden';a.name='form_action';a.value='mass_delete';f.appendChild(a);"
     Write "  const s=document.createElement('input');s.type='hidden';s.name='selected_slots';s.value=ids.join(',');f.appendChild(s);"
+    Write "  const w=document.createElement('input');w.type='hidden';w.name='walker_id';w.value='" _ walkerId _ "';f.appendChild(w);"
     Write "  document.body.appendChild(f);f.submit();"
     Write "}"
-    Write "function deleteSlot(id){if(confirm('¿Está seguro de eliminar esta disponibilidad?')){const f=document.createElement('form');f.method='POST';const a=document.createElement('input');a.type='hidden';a.name='form_action';a.value='delete';f.appendChild(a);const s=document.createElement('input');s.type='hidden';s.name='delete_slot_id';s.value=id;f.appendChild(s);document.body.appendChild(f);f.submit();}}"
+    Write "function deleteSlot(id){if(confirm('¿Está seguro de eliminar esta disponibilidad?')){const f=document.createElement('form');f.method='POST';const a=document.createElement('input');a.type='hidden';a.name='form_action';a.value='delete';f.appendChild(a);const s=document.createElement('input');s.type='hidden';s.name='delete_slot_id';s.value=id;f.appendChild(s);const w=document.createElement('input');w.type='hidden';w.name='walker_id';w.value='" _ walkerId _ "';f.appendChild(w);document.body.appendChild(f);f.submit();}}"
     Write "function duplicateSlot(id){document.getElementById('duplicateSourceId').value=id;new bootstrap.Modal(document.getElementById('duplicateModal')).show();}"
     Write "function editSlot(id){document.getElementById('edit_slot_id').value=id;new bootstrap.Modal(document.getElementById('editModal')).show();}"
     Write "document.addEventListener('DOMContentLoaded',()=>{const tf=document.getElementById('templateForm');if(tf){tf.addEventListener('submit',function(e){const cbs=[...this.querySelectorAll('input[name=\\'template_weekday_option\\']:checked')];if(cbs.length===0){e.preventDefault();alert('Selecciona al menos un día');return false;}const hidden=this.querySelector('input[name=\\'template_weekdays\\']')||document.createElement('input');hidden.type='hidden';hidden.name='template_weekdays';hidden.value=cbs.map(x=>x.value).join(',');this.appendChild(hidden);});}});"
@@ -641,7 +652,7 @@ ClassMethod RenderAvailabilityList(walkerId As %Integer, slots As %DynamicArray)
 }
 
 /// Modal de edición rápida (capacidad, tarifa, notas, estado)
-ClassMethod RenderEditModal() As %Status
+ClassMethod RenderEditModal(walkerId As %String) As %Status
 {
     Write "<div class='modal fade' id='editModal' tabindex='-1'>"
     Write "<div class='modal-dialog'>"
@@ -652,6 +663,7 @@ ClassMethod RenderEditModal() As %Status
     Write "</div>"
     Write "<form method='POST'>"
     Write "<input type='hidden' name='form_action' value='edit'>"
+    Write "<input type='hidden' name='walker_id' value='" _ walkerId _ "'>"
     Write "<input type='hidden' id='edit_slot_id' name='slot_id'>"
     Write "<div class='modal-body'>"
     Write "<div class='mb-3'>"
@@ -683,7 +695,7 @@ ClassMethod RenderEditModal() As %Status
 }
 
 /// Modal para duplicar slot a múltiples fechas
-ClassMethod RenderDuplicateModal() As %Status
+ClassMethod RenderDuplicateModal(walkerId As %String) As %Status
 {
     Write "<div class='modal fade' id='duplicateModal' tabindex='-1'>"
     Write "<div class='modal-dialog'>"
@@ -694,6 +706,7 @@ ClassMethod RenderDuplicateModal() As %Status
     Write "</div>"
     Write "<form method='POST'>"
     Write "<input type='hidden' name='form_action' value='duplicate'>"
+    Write "<input type='hidden' name='walker_id' value='" _ walkerId _ "'>"
     Write "<input type='hidden' id='duplicateSourceId' name='source_slot_id'>"
     Write "<div class='modal-body'>"
     Write "<div class='mb-3'>"
@@ -713,7 +726,7 @@ ClassMethod RenderDuplicateModal() As %Status
 }
 
 /// Modal para crear plantilla recurrente
-ClassMethod RenderTemplateModal() As %Status
+ClassMethod RenderTemplateModal(walkerId As %String) As %Status
 {
     Write "<div class='modal fade' id='templateModal' tabindex='-1'>"
     Write "<div class='modal-dialog modal-lg'>"
@@ -724,6 +737,7 @@ ClassMethod RenderTemplateModal() As %Status
     Write "</div>"
     Write "<form id='templateForm' method='POST'>"
     Write "<input type='hidden' name='form_action' value='create_template'>"
+    Write "<input type='hidden' name='walker_id' value='" _ walkerId _ "'>"
     Write "<div class='modal-body'>"
     Write "<div class='row'>"
     Write "<div class='col-md-6'>"
